@@ -1,0 +1,33 @@
+{% load static %}
+
+<div class="container">
+    <div class="row mt-5 mb-5 mx-3">
+        <div class="col-4 p-0">
+            <select class="form-select index-left-forms">
+                <option selected>Откуда</option>
+                <option value="1">One</option>
+                <option value="2">Two</option>
+                <option value="3">Three</option>
+            </select>
+        </div>
+        <div class="col-4 p-0">
+            <select class="form-select index-middle-forms">
+                <option selected>Куда</option>
+                <option value="1">One</option>
+                <option value="2">Two</option>
+                <option value="3">Three</option>
+            </select>
+        </div>
+        <div class="col-3 p-0">
+            <div>
+                <input id="endDate" class="form-control index-middle-forms" type="date" />
+                <span id="endDateSelected"></span>
+            </div>
+        </div>
+        <div class="col-1 p-0">
+            <button class="btn index-right-forms index-buy-ticket-button">
+                <img src="{% static 'imgs/search.svg' %}"/>
+            </button>
+        </div>
+    </div>
+</div>
