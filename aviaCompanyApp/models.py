@@ -4,15 +4,10 @@ from django.core.validators import RegexValidator
 phone_regex = RegexValidator(regex=r'^\+?1?\d{9,15}$')
 
 class Client(models.Model):
-    LOYALTY_CHOICES = {
-        '1': 'Low loyalty program',
-        '2': 'High loyalty program',
-    }
     first_name = models.CharField(max_length=43)
     surname = models.CharField(max_length=43)
     middle_name = models.CharField(max_length=43)
     e_mail = models.EmailField()
-    loyalty_program = models.CharField(choices=LOYALTY_CHOICES)
     phone_num = models.CharField(validators=[phone_regex])
 
 
@@ -32,24 +27,23 @@ class Staff(models.Model):
 
 class Airport(models.Model):
 
-    STATUS_CHOICES = {
-        'WR': 'Working',
-        'TN': 'Temporarily not working', 
-        'CL': 'Closed'
-    }
+    STATUS_CHOICES = (
+        ('WR', 'Working'),
+        ('TN', 'Temporarily not working'), 
+        ('CL', 'Closed')
+    )
     nearest_city = models.CharField()
     status = models.CharField(choices=STATUS_CHOICES)
     max_wingspan = models.IntegerField()
 
 
 class Service(models.Model):
-    SERVICES_TYPES = {
-        'PRS': 'Priority service',
-        'LS': 'Luggage service',
-        'FFS': 'Additional meal',
-        'ODF': 'Other services during flight',
-        'OAF': 'Other services after flight',
-    }
+    SERVICES_TYPES = (
+        ('LS', 'Luggage service'),
+        ('FFS', 'Additional meal'),
+        ('ODF', 'Other services during flight'),
+        ('OAF', 'Other services after flight'),
+    )
     type = models.CharField(choices=SERVICES_TYPES)
     name = models.CharField(max_length=50)
     description = models.TextField(null=True, blank=True)
@@ -57,10 +51,10 @@ class Service(models.Model):
     
 
 class PassengerPlane(models.Model):
-    STATUS_CHOICES = {
-        'UR': 'Under repair',
-        'ACT': 'Active',
-    }
+    STATUS_CHOICES = (
+        ('UR', 'Under repair'),
+        ('ACT', 'Active'),
+    )
     id_number = models.CharField(primary_key=True)
     manufacturer = models.CharField(max_length=60)
     model = models.CharField(max_length=60)
@@ -79,23 +73,23 @@ class PassengerPlane(models.Model):
         ]
 
 class Weekday(models.Model):
-    WEEK_DAYS = {
-        'MON': 'Monday',
-        'TUE': 'Tuesday',
-        'WED': 'Wednesday',
-        'THU': 'Thursday',
-        'FRI': 'Friday',
-        'SAT': 'Saturday',
-        'SUN': 'Sunday',
-    }
+    WEEK_DAYS = (
+        ('MON', 'Monday'),
+        ('TUE', 'Tuesday'),
+        ('WED', 'Wednesday'),
+        ('THU', 'Thursday'),
+        ('FRI', 'Friday'),
+        ('SAT', 'Saturday'),
+        ('SUN', 'Sunday'),
+    )
     day = models.CharField(primary_key=True, choices=WEEK_DAYS)
 
 class Airway(models.Model):
-    STATUS_CHOICES = {
-        'CMP': 'Active',
-        'IDT': 'In development',
-        'CLS': 'Closed'
-    }
+    STATUS_CHOICES = (
+        ('CMP', 'Active'),
+        ('IDT', 'In development'),
+        ('CLS', 'Closed')
+    )
     number = models.CharField(primary_key=True)
     departure_airport = models.ForeignKey(to=Airport, on_delete=models.SET_NULL, 
                                           null=True, related_name='%(class)s_dep_Airport')
@@ -111,13 +105,13 @@ class Airway(models.Model):
 
 
 class Flight(models.Model):
-    STATUS_CHOICES = {
-        'CLD': 'Cancelled',
-        'EXP': 'Expected',
-        'DLD': 'Delayed',
-        'IFL': 'In flight',
-        'CTD': 'Completed',
-    }
+    STATUS_CHOICES = (
+        ('CLD','Cancelled'),
+        ('EXP','Expected'),
+        ('DLD','Delayed'),
+        ('IFL','In flight'),
+        ('CTD','Completed'),
+    )
     airway = models.ForeignKey(to=Airway, on_delete=models.DO_NOTHING)
     date_departure = models.DateField()
     time_departure = models.TimeField()
@@ -126,10 +120,10 @@ class Flight(models.Model):
     status = models.CharField(choices=STATUS_CHOICES)
 
 class Ticket(models.Model):
-    STATUS_CHOICES = {
-        'NO': 'Not booked',
-        'YES': 'Booked'
-    }
+    STATUS_CHOICES = (
+        ('NO','Not booked'),
+        ('YES','Booked')
+    )
     client = models.ForeignKey(to=Client, on_delete=models.DO_NOTHING)
     flight = models.ForeignKey(to=Flight, on_delete=models.RESTRICT)
     seat_num = models.CharField(null=True)
@@ -139,5 +133,5 @@ class Ticket(models.Model):
     class Meta: 
         models.CheckConstraint(
                 name="seat_num_constraint",
-                condition=models.Q(seat_num__contains="^\d{1,2}\s{1}$")
+                check=models.Q(seat_num__contains="^\d{1,2}\s{1}$")
             )

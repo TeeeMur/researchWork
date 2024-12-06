@@ -61,6 +61,7 @@
 }
 
 .index-tab {
+    border-bottom: none;
     border-bottom-left-radius: var(--bs-nav-tabs-border-radius);
     border-bottom-right-radius: var(--bs-nav-tabs-border-radius);
 }
