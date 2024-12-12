@@ -1,0 +1,38 @@
+{% extends 'layouts/main_layout.html' %}
+{% load static %}
+
+{% block content %}
+<div class="index-back-image">
+    <div class="container">
+        <div class="row justify-content-center pt-5">
+            <div class="col-lg-4 col-10 container justify-content-center bg-light rounded mt-5 mb-5">
+                <h2 class="m-4 text-center">Профиль</h2>
+                <form class="m-2 mb-1" method="POST">
+                    {% csrf_token %}
+                    {% for field in profileForm %}
+                        {{ field.label }}
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="alert alert-warning text-center pb-1 pt-1">
+                                {% for error in field.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                    {% for message in messages %}
+                        <div class="alert alert-success mt-1" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                    <button class="btn btn-primary w-100 mt-1" type="submit">Сохранить</button>
+                </form>
+                <div class="me-2 ms-2 mb-3">
+                    <a class="btn btn-success w-100 mb-4" href="{% url 'profile.docs' %}">Мои документы</a>
+                    <a class="btn btn-outline-danger w-100" href="{% url 'logout' %}">Выйти</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

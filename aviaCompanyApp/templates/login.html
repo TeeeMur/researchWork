@@ -1,0 +1,26 @@
+{% extends 'layouts/main_layout.html' %}
+{% load static %}
+
+{% block content %}
+<div class="index-back-image">
+    <div class="container">
+        <div class="row justify-content-center pt-5">
+            <div class="col-lg-4 col-10 container justify-content-center bg-light rounded mt-5 mb-5">
+                    <h2 class="m-4 text-center">Войти в аккаунт</h2>
+                    <form class="m-2" method="POST">
+                        {% csrf_token %}
+                        {% for field in loginForm %}
+                            {{ field }}
+                        {% endfor %}
+                        <label class="form-check-label">Я не робот</label>
+                        {{ loginForm.non_field_errors }}
+                        <button class="btn btn-outline-primary w-100 mb-2" type="submit">Войти</button>
+                    </form>
+                    <div class="m-2 mb-4">
+                        <a class="btn button-layout-color w-100" href="{% url 'register' %}">Зарегистрироваться</a>
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

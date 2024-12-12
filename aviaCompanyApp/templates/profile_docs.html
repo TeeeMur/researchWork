@@ -1,0 +1,29 @@
+{% extends 'layouts/main_layout.html' %}
+{% load static %}
+
+{% block content %}
+<div class="index-back-image">
+    <div class="container">
+        <div class="row justify-content-center pt-5">
+            <div class="col-lg-4 col-10 container justify-content-center bg-light rounded mt-5 mb-5">
+                <a class="btn mt-3" href="{% url 'profile' %}" ><img class="mb-1" src="{% static 'imgs/arrow_left.svg' %}"/> Профиль</a>
+                <h2 class="text-center">Документы</h2>
+                {% for docForm in docsForms %}
+                <form class="m-2 mb-4 p-3 border rounded" method="POST">
+                    {% csrf_token %}
+                    {% for docField in docForm %}
+                        {% if docField.name == 'added_check' %}
+                            {{ docField }} {{ docField.label }}
+                            <div></div>
+                        {% else %}
+                            {{ docField.label }}{{ docField }}
+                        {% endif %}
+                    {% endfor %}
+                    <button class="btn btn-primary w-100" type="submit" name="{{ docForm.custom_name.value }}">Сохранить</button>
+                </form>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
