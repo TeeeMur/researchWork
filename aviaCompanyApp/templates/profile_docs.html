@@ -8,6 +8,17 @@
             <div class="col-lg-4 col-10 container justify-content-center bg-light rounded mt-5 mb-5">
                 <a class="btn mt-3" href="{% url 'profile' %}" ><img class="mb-1" src="{% static 'imgs/arrow_left.svg' %}"/> Профиль</a>
                 <h2 class="text-center">Документы</h2>
+                {% for message in messages %}
+                    {% if message.level == DEFAULT_MESSAGE_LEVELS.WARNING %}
+                        <div class="alert alert-warning mt-1 me-2 ms-2" role="alert">
+                            {{ message }}
+                        </div>
+                    {% elif message.level == DEFAULT_MESSAGE_LEVELS.INFO %}
+                        <div class="alert alert-success mt-1 me-2 ms-2" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
                 {% for docForm in docsForms %}
                 <form class="m-2 mb-4 p-3 border rounded" method="POST">
                     {% csrf_token %}

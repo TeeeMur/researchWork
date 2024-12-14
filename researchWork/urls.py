@@ -21,10 +21,12 @@ from aviaCompanyApp import views
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('ticket_search/', views.flight_search_results, name='index.ticket_search'),
     path('admin/', admin.site.urls),
     path('login/', views.login, name='login'),
     path('register/', views.register, name='register'),
     path('profile/', views.profile, name='profile'),
     path('profile/docs/', views.profile_docs, name='profile.docs'),
     path('logout/', views.logout, name='logout'),
+    path('ticket_view/<slug:flight_slug>/<int:add_lug>/', views.ticket_view, name='ticket_view'),
 ]

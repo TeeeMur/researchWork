@@ -1,9 +1,15 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.core.validators import RegexValidator
+from django.core.exceptions import FieldError, ValidationError
+from itertools import product
+from datetime import datetime
+from django.template.defaultfilters import slugify
 
 phone_regex = RegexValidator(regex=r'^\+?\d{9,15}$', message='Некорректный номер телефона')
-airport_code_validator = RegexValidator(regex=r'^[A-Z][A-Z][A-Z]$')
+airport_code_validator = RegexValidator(regex=r'^[A-Z][A-Z][A-Z][A-Z]?$')
+MILES_COEFF = 0.1
+
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password):
@@ -23,12 +29,18 @@ class CustomUserManager(BaseUserManager):
         user.set_password(password)
         user.save()
         return user
+    
+class FlightManager(models.Manager):
+    def get_flight_by_cities_and_date_ordtime(self, dep_city, dest_city, date):
+        return self.select_related('airway').filter(airway__departure_airport__nearest_city=dep_city, 
+                                                               airway__destination_airport__nearest_city=dest_city, date_departure=date).order_by('time_arrival')
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
-    first_name = models.CharField(max_length=43, null=True)
-    surname = models.CharField(max_length=43, null=True)
+    MAX_DOCS = 2
+    first_name = models.CharField(max_length=43, null=True, blank=True)
+    surname = models.CharField(max_length=43, null=True, blank=True)
     email = models.EmailField(unique=True, blank=False)
-    phone_num = models.CharField(validators=[phone_regex], null=True)
+    phone_num = models.CharField(validators=[phone_regex], null=True, blank=True)
     miles_balance = models.IntegerField(default=0)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
@@ -51,75 +63,86 @@ class Doc(models.Model):
 
     class Meta:
         unique_together = ['number', 'type', 'date_of_issue', 'custom_name']
+        
+    def save(self, *args, **kwargs):
+        if self.id == None:
+            if Doc.objects.filter(owner=self.owner).count() == CustomUser.MAX_DOCS:
+                raise ValidationError('У данного пользователя уже есть 2 документа!')
+        return super(Doc, self).save(*args, **kwargs)
 
 class Pilot(models.Model): 
     first_name = models.CharField(max_length=43)
     surname = models.CharField(max_length=43)
-    middle_name = models.CharField(max_length=43)
+    middle_name = models.CharField(max_length=43, null=True, blank=True)
     experience = models.IntegerField()
     phone_num = models.CharField(validators=[phone_regex])
+
+    def __str__(self):
+        return f'{self.surname} {self.first_name} {self.middle_name}'
 
 class Staff(models.Model):
     first_name = models.CharField(max_length=43)
     surname = models.CharField(max_length=43)
-    middle_name = models.CharField(max_length=43)
+    middle_name = models.CharField(max_length=43, null=True, blank=True)
     phone_num = models.CharField(validators=[phone_regex])
     position = models.CharField()
+
+    def __str__(self):
+        return f'{self.surname} {self.first_name} {self.middle_name}'
 
 class Airport(models.Model):
 
     STATUS_CHOICES = (
-        ('WR', 'Working'),
-        ('TN', 'Temporarily not working'), 
-        ('CL', 'Closed')
+        ('WR', 'Работает'),
+        ('TN', 'Временно не работает'), 
+        ('CL', 'Закрыт')
     )
     nearest_city = models.CharField()
-    international_code = models.CharField(validators=[airport_code_validator])
+    name = models.CharField(max_length=50)
+    international_code = models.CharField(validators=[airport_code_validator], primary_key=True)
     status = models.CharField(choices=STATUS_CHOICES)
-    max_wingspan = models.IntegerField()
+
+    def __str__(self):
+        return self.name
 
 
 class Service(models.Model):
     SERVICES_TYPES = (
-        ('LS', 'Luggage service'),
-        ('FFS', 'Additional meal'),
-        ('ODF', 'Other services during flight'),
-        ('OAF', 'Other services after flight'),
+        ('LS', 'Услуги по багажу'),
+        ('FFS', 'Услуги питания'),
+        ('ODF', 'Другие услуги во время полета'),
+        ('OAF', 'Другие услуги до/после полета'),
     )
     type = models.CharField(choices=SERVICES_TYPES)
     name = models.CharField(max_length=50)
     description = models.TextField(null=True, blank=True)
     price = models.IntegerField()
+
+    def __str__(self):
+        return f'{self.name}'
     
 
 class PassengerPlane(models.Model):
     STATUS_CHOICES = (
-        ('UR', 'Under repair'),
-        ('ACT', 'Active'),
+        ('UR', 'В ремонте'),
+        ('ACT', 'В работе'),
     )
-    id_number = models.CharField(primary_key=True)
+    on_board_number = models.CharField(primary_key=True, validators=[RegexValidator(regex=r'^[A-Z][A-Z]-\d{4,5}$')])
     manufacturer = models.CharField(max_length=60)
     model = models.CharField(max_length=60)
     load_capacity = models.IntegerField()
-    wingspan = models.IntegerField()
     max_flight_range = models.IntegerField()
     service_life = models.IntegerField()
     status = models.CharField(choices=STATUS_CHOICES)
 
-    class Meta: 
-        constraints = [
-            models.CheckConstraint(
-                name='plane_number_constraint',
-                check=models.Q(id_number__contains='^[A-Z]{1,2}-[0-9]{5}$')
-            )
-        ]
-
+    def __str__(self):
+        return f'{self.on_board_number} {self.manufacturer} {self.model}'
 
 class Airway(models.Model):
     STATUS_CHOICES = (
-        ('CMP', 'Active'),
-        ('IDT', 'In development'),
-        ('CLS', 'Closed')
+        ('CMP', 'Активный'),
+        ('IDT', 'В разработке'),
+        ('CLS', 'Закрыт')
     )
     number = models.CharField(primary_key=True)
     departure_airport = models.ForeignKey(to=Airport, on_delete=models.SET_NULL, 
@@ -127,58 +150,93 @@ class Airway(models.Model):
     destination_airport = models.ForeignKey(to=Airport, on_delete=models.SET_NULL, 
                                             null=True, related_name='%(class)s_dest_Airport')
     departure_time = models.TimeField()
-    flight_duration = models.IntegerField()
+    flight_duration = models.DurationField()
     pilots = models.ManyToManyField(to=Pilot)
     staff = models.ManyToManyField(to=Staff)
     services = models.ManyToManyField(to=Service)
     plane = models.ForeignKey(to=PassengerPlane, on_delete=models.SET_NULL, null=True)
 
+    def __str__(self):
+        return f'{self.number} {self.departure_airport.nearest_city}-{self.destination_airport.nearest_city}'
+    
+    def flight_duration_hhmm(self):
+        seconds_value = self.flight_duration.total_seconds()
+        hours = int(seconds_value // 3600)
+        minutes = int(seconds_value % 3600 // 60)
+        return f'{hours}ч {minutes}мин'
+
 
 class Weekday(models.Model):
     WEEK_DAYS = (
-        ('MON', 'Monday'),
-        ('TUE', 'Tuesday'),
-        ('WED', 'Wednesday'),
-        ('THU', 'Thursday'),
-        ('FRI', 'Friday'),
-        ('SAT', 'Saturday'),
-        ('SUN', 'Sunday'),
+        ('MON', 'Понедельник'),
+        ('TUE', 'Вторник'),
+        ('WED', 'Среда'),
+        ('THU', 'Четверг'),
+        ('FRI', 'Пятница'),
+        ('SAT', 'Суббота'),
+        ('SUN', 'Воскресенье'),
     )
-    day = models.CharField(primary_key=True, choices=WEEK_DAYS)
+    day = models.CharField(choices=WEEK_DAYS)
     airway = models.ForeignKey(to=Airway, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'{self.get_day_display()}: {self.airway}'
 
 
 class Flight(models.Model):
     STATUS_CHOICES = (
-        ('EXP','Expected'),
-        ('CLD','Cancelled'),
-        ('PLD', 'Planned'),
-        ('DLD','Delayed'),
-        ('IFL','In flight'),
-        ('CTD','Completed'),
+        ('EXP','Ожидается'),
+        ('CLD','Отменен'),
+        ('PLD', 'Запланирован'),
+        ('DLD','Задерживается'),
+        ('IFL','В полете'),
+        ('CTD','Выполнен'),
     )
-    airway = models.ForeignKey(to=Airway, on_delete=models.DO_NOTHING)
+    slugField = models.SlugField(unique=True, db_index=True)
+    airway = models.ForeignKey(to=Airway, on_delete=models.PROTECT)
     date_departure = models.DateField()
-    time_departure = models.TimeField()
-    date_arrival = models.DateField()
-    time_arrival = models.TimeField()
+    time_departure = models.TimeField(blank=True, null=True)
+    date_arrival = models.DateField(blank=True, null=True)
+    time_arrival = models.TimeField(blank=True, null=True)
     status = models.CharField(choices=STATUS_CHOICES)
     price = models.IntegerField()
 
+    objects = FlightManager()
+
+    def extra_lug_price(self):
+        return self.price + Service.objects.filter(name='Дополнительный багаж').first().price
+    
+    def save(self, *args, **kwargs):
+        approved_weekdays = list(Weekday.objects.filter(airway=self.airway).values_list('day', flat=True))
+        if str(Weekday.WEEK_DAYS[self.date_departure.isoweekday() - 1]) not in approved_weekdays:
+            raise ValidationError('Дата и день недели не совпадают')
+        if self.time_departure is None:
+            self.time_departure = self.airway.departure_time
+        if not self.slugField:
+            self.slugField = slugify((self.airway.number + str(self.date_departure)))
+        if self.date_arrival is None and self.time_arrival is None:
+            arrival_datetime = datetime.combine(self.date_departure, self.airway.departure_time) + self.airway.flight_duration
+            self.date_arrival = arrival_datetime.date()
+            self.time_arrival = arrival_datetime.time()
+        super(Flight, self).save(*args, **kwargs)
+        if FlightSeat.objects.filter(flight=self).first() is None:
+            seats_count = self.airway.plane.load_capacity
+            seats = list(map(lambda x: FlightSeat(seat_num="".join(x), flight=self), product([str(i) for i in range(seats_count//6 + 1)], 'ABCDEF')))[0:seats_count]
+            FlightSeat.objects.bulk_create(seats)
+        return self
+
 class Ticket(models.Model):
     STATUS_CHOICES = (
-        ('NO','Not booked'),
-        ('YES','Booked')
+        ('NO','Не забронирован'),
+        ('YES','Забронирован')
     )
-    client = models.ForeignKey(to=CustomUser, on_delete=models.DO_NOTHING)
-    flight = models.ForeignKey(to=Flight, on_delete=models.RESTRICT)
-    seat_num = models.CharField(null=True)
+    client = models.ForeignKey(to=CustomUser, on_delete=models.CASCADE)
+    flight = models.ForeignKey(to=Flight, on_delete=models.PROTECT)
     booking_status = models.CharField(choices=STATUS_CHOICES)
     services = models.ManyToManyField(Service)
     price = models.IntegerField()
 
-    class Meta: 
-        models.CheckConstraint(
-                name="seat_num_constraint",
-                check=models.Q(seat_num__contains=r"^\d{1,2}\s{1}$")
-            )
+class FlightSeat(models.Model):
+    flight = models.ForeignKey(to=Flight, on_delete=models.CASCADE)
+    seat_num = models.CharField(validators=[RegexValidator(r'^\d\d?[A-F]$')])
+    ticket_num=models.OneToOneField(to=Ticket, on_delete=models.SET_NULL, null=True)

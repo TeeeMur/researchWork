@@ -27,7 +27,7 @@
                             <a class="nav-link active navbar-actions" aria-current="page" href="{% url 'index' %}">Покупка и управление</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link active navbar-actions" href="#">О нас</a>
+                            <a class="nav-link active navbar-actions" href="https://bmstu.ru/student" target="_blank">О нас</a>
                         </li>
                     </ul>
                     {% if request.user.is_authenticated %}
@@ -52,7 +52,7 @@
                 {% else %}
                     <li class="nav-item"><a href="{% url 'register' %}" class="nav-link px-2 text-body-secondary">Зарегистрироваться</a></li>
                 {% endif %}
-                <li class="nav-item"><a href="#" class="nav-link px-2 text-body-secondary">О нас</a></li>
+                <li class="nav-item"><a href="https://bmstu.ru/student" target="_blank" class="nav-link px-2 text-body-secondary">О нас</a></li>
             </ul>
             <p class="text-center text-body-secondary"><img src="{% static 'imgs/airplane_fill_icon.svg' %}"> 2024 Bauman Airways, Inc.</p>
         </div>

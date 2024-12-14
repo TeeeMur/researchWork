@@ -1,16 +1,44 @@
 {% load static %}
-<div class="container border rounded mt-2 mb-2 ms-1 me-1">
-    <h2>Bauman Airlines</h2>
-    <div class="row">
+<div class="container border rounded mt-2 mb-2 ms-1 me-1 p-1">
+    <div class="row m-0">
         <div class="col-8">
-            <div>{{ flight.time_departure }}</div>
-            <div>{{ flight.airport_departure }}</div>
-            <div>-----------\></div>
-            <div>{{ flight.airport_arrival }}</div>
-            <div>{{ flight.time_arrival }}</div>
+            <div class="w-100 d-inline-flex justify-content-between">
+                <h4 class="ms-1 mt-2">Bauman Airlines</h4>
+                <div class="me-2 mt-2 mb-2 fw-normal fs-5">Рейс: {{ flight.airway.number }}</div>
+            </div>
+            <div class="ps-2 w-100 d-inline-flex justify-content-between mb-1">
+                <div class="d-inline-flex">
+                    <div class="ms-1">
+                        <div class="align-content-center">
+                            <div class="fw-bold fs-1">{{ flight.time_departure|time:"H:i" }}</div>
+                            <div class="text-center fw-bolder">{{ flight.date_departure|date:"d M" }}</div>
+                        </div>
+                    </div>
+                    <div class="pb-4 pt-1 ms-2 align-content-center text-center fw-bolder">{{ flight.airway.departure_airport.international_code }}</div>
+                </div>
+                <div class="align-content-center pb-3">В пути: {{ flight.airway.flight_duration_hhmm }}</div>
+                <div class="d-inline-flex">
+                    <div class="pb-4 pt-1 me-2 align-content-center text-center fw-bolder">{{ flight.airway.destination_airport.international_code }}</div>
+                    <div class="me-1">
+                        <div class="align-content-center">
+                            <div class="fw-bold fs-1">{{ flight.time_arrival|time:"H:i" }}</div>
+                            <div class="text-center fw-bolder">{{ flight.date_arrival|date:"d M" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="col-4">
-            <a class="btn btn-primary">Выбрать</a>
+        <div class="col-2 p-1">
+            <a class="btn btn-secondary w-100 h-100" href="{% url 'ticket_view' flight_slug=flight.slugField add_lug=0 %}">
+                <div class="h-50 fw-bolder align-content-center">Эконом Базовый</div>
+                <div class="h-50 fs-3 fw-bold">{{ flight.price }} ₽</div>
+            </a>
+        </div>
+        <div class="col-2 p-1">
+            <a class="btn button-ticket-plus-color w-100 h-100" href="{% url 'ticket_view' flight_slug=flight.slugField add_lug=1 %}">
+                <div class="h-50 fw-bolder align-content-center">Эконом Плюс <img src="{% static 'imgs/suitcase-lg-fill.svg' %}"/></div>
+                <div class="h-50 fs-3 fw-bold" href="">{{ flight.extra_lug_price }} ₽</div>
+            </a>
         </div>
     </div>
 </div>
