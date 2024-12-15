@@ -12,10 +12,8 @@ from django.http import HttpResponse
 
 def index(request):
     bookingForm = BookingStatusForm()
-    ticketRegisterForm = TicketRegisterForm()
     buyTicketsForm = BuyTicketsForm()
     return render(request, 'index.html', {'bookingForm': bookingForm,
-                                          'ticketRegisterForm': ticketRegisterForm,
                                           'buyTicketsForm': buyTicketsForm})
 
 def flight_search_results(request):
@@ -177,4 +175,4 @@ def search_ticket(request):
 def profile_tickets(request):
     curr_profile = request.user
     profile_tickets = Ticket.objects.filter(client=curr_profile).all()
-    return render(request, 'profile_tickets.html', {'profile_tickets':profile_tickets})
+    return render(request, 'profile_tickets.html', {'profile_tickets': profile_tickets})

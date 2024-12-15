@@ -1,1 +1,13 @@
 {% load static %}
+
+<div class="container">
+    <div class="row m-0">
+        <div class="col-8">
+            <h4>Bauman airlines</h4>
+            <div>Номер билета: {{ each_ticket.slugField }}</div>
+        </div>
+        <div class="col-4">
+            <a class="btn button-ticket-plus-color">Перейти к билету</a>
+        </div>
+    </div>
+</div>
