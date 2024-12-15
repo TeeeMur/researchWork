@@ -18,7 +18,7 @@ class BuyTicketsForm(forms.Form):
     arrival_city = forms.ModelChoiceField(queryset=models.Airport.objects.filter(status=models.Airport.STATUS_CHOICES[0][0]).values_list('nearest_city', flat=True).distinct(), 
                                           widget=forms.Select(attrs={'class': 'form-select index-middle-forms'}), label='', empty_label='Куда')
     flight_date = forms.DateField(widget=forms.DateInput(attrs={'class': 'form-control index-middle-forms', 
-                                                                'type': 'date', 'value': datetime.date.today() + datetime.timedelta(days=-1),
+                                                                'type': 'date', 'value': datetime.date.today(),
                                                                 'min': datetime.date.today(),
                                                                 'max': datetime.date.today() + datetime.timedelta(days=90)}), label='')
 
@@ -62,8 +62,6 @@ class UpdateUserForm(forms.ModelForm):
     class Meta:
         model = models.CustomUser
         fields = ['first_name', 'surname', 'email', 'phone_num']
-        
-
 
 class DocForm(forms.ModelForm):
     added_check = forms.BooleanField(widget=forms.CheckboxInput(attrs={'class': 'form-check-input ms-2 mb-3'}), label='Добавлен', required=False)
@@ -76,3 +74,4 @@ class DocForm(forms.ModelForm):
     class Meta:
         model = models.Doc
         fields = ['added_check', 'custom_name', 'type', 'date_of_issue', 'number']
+

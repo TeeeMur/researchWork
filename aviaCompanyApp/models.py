@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.core.validators import RegexValidator
 from django.core.exceptions import FieldError, ValidationError
 from itertools import product
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.template.defaultfilters import slugify
 
 phone_regex = RegexValidator(regex=r'^\+?\d{9,15}$', message='Некорректный номер телефона')
@@ -32,8 +32,13 @@ class CustomUserManager(BaseUserManager):
     
 class FlightManager(models.Manager):
     def get_flight_by_cities_and_date_ordtime(self, dep_city, dest_city, date):
-        return self.select_related('airway').filter(airway__departure_airport__nearest_city=dep_city, 
-                                                               airway__destination_airport__nearest_city=dest_city, date_departure=date).order_by('time_arrival')
+        return self.annotate(tickets_count=models.Count('flightseat', filter=models.Q(flightseat__ticket_num__isnull=True))).select_related('airway').filter(airway__departure_airport__nearest_city=dep_city, 
+                                                               airway__destination_airport__nearest_city=dest_city, 
+                                                               date_departure=date, tickets_count__gt=0).order_by('time_arrival')
+    
+class ServicesManager(models.Manager):
+    def get_services_for_flight(self, flight):
+        return self.filter(airway=flight.airway).all()
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     MAX_DOCS = 2
@@ -41,7 +46,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     surname = models.CharField(max_length=43, null=True, blank=True)
     email = models.EmailField(unique=True, blank=False)
     phone_num = models.CharField(validators=[phone_regex], null=True, blank=True)
-    miles_balance = models.IntegerField(default=0)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     
@@ -63,12 +67,7 @@ class Doc(models.Model):
 
     class Meta:
         unique_together = ['number', 'type', 'date_of_issue', 'custom_name']
-        
-    def save(self, *args, **kwargs):
-        if self.id == None:
-            if Doc.objects.filter(owner=self.owner).count() == CustomUser.MAX_DOCS:
-                raise ValidationError('У данного пользователя уже есть 2 документа!')
-        return super(Doc, self).save(*args, **kwargs)
+    
 
 class Pilot(models.Model): 
     first_name = models.CharField(max_length=43)
@@ -114,9 +113,11 @@ class Service(models.Model):
         ('OAF', 'Другие услуги до/после полета'),
     )
     type = models.CharField(choices=SERVICES_TYPES)
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=50, unique=True)
     description = models.TextField(null=True, blank=True)
     price = models.IntegerField()
+
+    objects = ServicesManager()
 
     def __str__(self):
         return f'{self.name}'
@@ -204,7 +205,13 @@ class Flight(models.Model):
     objects = FlightManager()
 
     def extra_lug_price(self):
+        extra_lug_name = 'Дополнительный багаж'
+        if Service.objects.filter(name=extra_lug_name).first() is None:
+            return LookupError(f'Услуга \"{extra_lug_name}\" не найдена')
         return self.price + Service.objects.filter(name='Дополнительный багаж').first().price
+    
+    def __str__(self):
+        return f'{self.airway.number} {self.date_departure}'
     
     def save(self, *args, **kwargs):
         approved_weekdays = list(Weekday.objects.filter(airway=self.airway).values_list('day', flat=True))
@@ -235,8 +242,13 @@ class Ticket(models.Model):
     booking_status = models.CharField(choices=STATUS_CHOICES)
     services = models.ManyToManyField(Service)
     price = models.IntegerField()
+    paid = models.BooleanField(default=False)
+    document = models.ForeignKey(to=Doc, on_delete=models.PROTECT, null=True)
 
 class FlightSeat(models.Model):
     flight = models.ForeignKey(to=Flight, on_delete=models.CASCADE)
     seat_num = models.CharField(validators=[RegexValidator(r'^\d\d?[A-F]$')])
     ticket_num=models.OneToOneField(to=Ticket, on_delete=models.SET_NULL, null=True)
+
+    def __str__(self):
+        return f'{self.flight} {self.seat_num}'

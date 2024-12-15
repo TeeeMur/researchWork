@@ -10,17 +10,19 @@
                 <h2 class="m-4 text-center">Вы выбрали:</h2>
                 <div class="container border rounded mt-2 mb-2 ms-1 me-1 p-1">
                     <div class="row m-0">
-                        <div class="col-3 border pb-2 pt-2 rounded buy-ticket-menu-date">
-                            <div class="w-100 text-center">{{ curr_flight.date_departure|date:'l' }}</div>
-                            <div class="w-100 text-center fs-1 fw-bold">{{ curr_flight.date_departure|date:'d' }}</div>
-                            <div class="w-100 text-center fs-5 fw-bolder">{{ curr_flight.date_departure|date:'F' }}</div>
+                        <div class="col-3 p-1">
+                            <div class="border pb-2 pt-2 rounded buy-ticket-menu-date">
+                                <div class="w-100 text-center">{{ curr_flight.date_departure|date:'l' }}</div>
+                                <div class="w-100 text-center fs-1 fw-bolder">{{ curr_flight.date_departure|date:'d' }}</div>
+                                <div class="w-100 text-center fs-5 fw-normal">{{ curr_flight.date_departure|date:'F' }}</div>
+                            </div>
                         </div>
                         <div class="col-6">
                             <div class="w-100 d-inline-flex justify-content-between">
                                 <h4 class="ms-1 mt-2">Bauman Airlines</h4>
                                 <div class="me-2 mt-2 mb-2 fw-normal fs-5">Рейс: {{ curr_flight.airway.number }}</div>
                             </div>
-                            <div class="ps-2 w-100 d-inline-flex justify-content-between mb-1">
+                            <div class="w-100 d-inline-flex justify-content-between mb-1">
                                 <div class="d-inline-flex">
                                     <div class="ms-1">
                                         <div class="align-content-center">
@@ -42,16 +44,44 @@
                         </div>
                         <div class="col-3 p-1">
                             {% if add_lug == 1 %}
-                            <div class="btn btn-like-color-plus w-100 h-100">
-                                <div class="h-50 fw-bolder align-content-center">Эконом Плюс <img src="{% static 'imgs/suitcase-lg-fill.svg' %}"/></div>
-                                <div class="h-50 fs-3 fw-bold" href="">{{ curr_flight.extra_lug_price }} ₽</div>
+                            <div class="btn-like-color-plus w-100 h-100 rounded">
+                                <div class="h-50 fw-bolder fs-5 text-center align-content-center pt-3 text-light">Эконом Плюс</div>
+                                <div class="h-50 fs-3 fw-bold text-center text-light align-content-start">{{ curr_flight.extra_lug_price }} ₽</div>
                             </div>
                             {% else %}
-                            <div class="btn btn-secondary w-100 h-100">
-                                <div class="h-50 fw-bolder align-content-center">Эконом Базовый</div>
-                                <div class="h-50 fs-3 fw-bold">{{ curr_flight.price }} ₽</div>
+                            <div class="btn-like-color-primary w-100 h-100 rounded">
+                                <div class="h-50 fw-bolder fs-5 text-center align-content-center pt-3 text-light">Эконом Базовый</div>
+                                <div class="h-50 fs-3 fw-bold text-center text-light align-content-start">{{ curr_flight.price }} ₽</div>
                             </div>
                             {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="container">
+                    <div class="row m-0">
+                        <form method='GET' class="col-8 ps-0 pe-2">
+                            {% for each_service in available_services %}
+                                {% include 'components/available_service_card.html' %}
+                            {% endfor %}
+                        </form>
+                        <div class="col-4 ps-1 pe-0">
+                            <div class="border rounded mt-1">
+                                <div class="m-2 fs-5 text-center">Выбрать документ:</div>
+                                {% if client_docs %}
+                                {% for client_doc in client_docs %}
+                                    {% include 'components/client_doc_for_ticket.html' %}
+                                {% endfor %}
+                                {% else %}
+                                <div class="w-100 d-inline-flex justify-content-center">
+                                    <a class="btn btn-primary m-2" href="{% url 'profile.docs' %}">Добавить документ</a>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="border rounded mt-1">
+                                {% for each_service in added_services %}
+                                    {{ each_service.name }}
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                 </div>

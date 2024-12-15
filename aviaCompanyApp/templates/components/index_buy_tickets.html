@@ -1,7 +1,7 @@
 {% load static %}
 
 <div class="container">
-    <form class="row mt-5 mb-5 mx-3" method="GET" action="{% url 'index.ticket_search' %}">
+    <form class="row mt-5 mb-3 mx-3" method="GET" action="{% url 'index.ticket_search' %}">
         {% for field in buyTicketsForm %}
             {% if field.name == 'flight_date' %}
             <div class="col-3 p-0">

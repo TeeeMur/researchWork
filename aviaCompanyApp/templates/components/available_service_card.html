@@ -1,0 +1,26 @@
+{% load static %}
+<div class="container border rounded mt-1 mb-3">
+    <div class="w-100 d-inline-flex justify-content-between mt-2">
+        <h4 class="ms-2">{{ each_service.name }}</h4>
+        <div class="align-content-center me-1 fs-5">{{ each_service.price }} ₽</div>
+    </div>
+    <div class="row m-0 mb-2">
+        <div class="col-9">
+            {{ each_service.description }}
+        </div>
+        <div class="col-3 mb-1 align-content-end">
+            <div>
+                {% if each_service.name == 'Дополнительный багаж' %}
+                    {% if add_lug == 1 %}
+                        <input type="checkbox" id="{{ each_service.name }}" checked disabled/>
+                    {% else %}
+                    <input type="checkbox" id="{{ each_service.name }}"/>
+                    {% endif %}
+                {% else %}
+                    <input type="checkbox" id="{{ each_service.name }}"/>
+                {% endif %}
+                <label for="{{ each_service.name }}">Добавить</label>
+            </div>
+        </div>
+    </div>
+</div>

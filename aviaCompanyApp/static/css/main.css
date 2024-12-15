@@ -116,6 +116,9 @@
     background-color: #99badd;
 }
 
+.btn-like-color-primary {
+    background-color: #565e64;
+}
 
 .button-ticket-plus-color {
     --bs-btn-color: #fff;

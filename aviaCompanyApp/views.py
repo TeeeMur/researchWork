@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.contrib import auth, messages
 from django.core.exceptions import NON_FIELD_ERRORS
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
 
 # Create your views here.
 
@@ -27,10 +28,13 @@ def flight_search_results(request):
     return render(request, 'flights_search_results.html', {'flightSearchResults': searchResults, 'buyTicketsForm': buyTicketsForm, 
                                                            'extra_lug': extra_lug})
 
+@login_required
 def ticket_view(request, flight_slug, add_lug):
-    request_params = request.GET
     curr_flight = Flight.objects.get(slugField=flight_slug)
-    return render(request, 'buy_ticket_menu.html', {'curr_flight': curr_flight})
+    available_services = Service.objects.get_services_for_flight(curr_flight)
+    client_docs = Doc.objects.filter(owner=request.user).all()
+    return render(request, 'buy_ticket_menu.html', {'curr_flight': curr_flight, 'add_lug': add_lug, 'available_services': available_services, 
+                                                    'client_docs': client_docs})
 
 def login(request):
     loginForm = LoginForm()
@@ -40,7 +44,12 @@ def login(request):
             user = auth.authenticate(request, **loginForm.cleaned_data)
             if user:
                 auth.login(request, user)
-                return redirect(reverse('index'))
+                next_page = request.POST.get('next')
+                if next_page:
+                    url = next_page
+                else:
+                    url = reverse('index')
+                return redirect(url)
             loginForm.add_error(field=NON_FIELD_ERRORS, error='Неправильный логин/пароль')
     return render(request, 'login.html', {'loginForm': loginForm})
 
@@ -80,6 +89,7 @@ def profile_docs(request):
     for i in range(len(docs)):
         docsForms[i] = DocForm(instance=docs[i], initial={'added_check': True})
     if request.method == "POST":
+        print(request.POST)
         doc_num = -1
         if len(docs) == 1 and docs[0].custom_name in request.POST:
             inputDocForm = DocForm(request.POST, instance=docs[0])

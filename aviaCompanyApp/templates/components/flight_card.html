@@ -3,10 +3,10 @@
     <div class="row m-0">
         <div class="col-8">
             <div class="w-100 d-inline-flex justify-content-between">
-                <h4 class="ms-1 mt-2">Bauman Airlines</h4>
-                <div class="me-2 mt-2 mb-2 fw-normal fs-5">Рейс: {{ flight.airway.number }}</div>
+                <h4 class="ms-1 mt-2 mb-0">Bauman Airlines</h4>
+                <div class="me-2 mt-2 fw-normal fs-5">Рейс: {{ flight.airway.number }}</div>
             </div>
-            <div class="ps-2 w-100 d-inline-flex justify-content-between mb-1">
+            <div class="ps-1 w-100 d-inline-flex justify-content-between mb-1">
                 <div class="d-inline-flex">
                     <div class="ms-1">
                         <div class="align-content-center">
@@ -14,9 +14,13 @@
                             <div class="text-center fw-bolder">{{ flight.date_departure|date:"d M" }}</div>
                         </div>
                     </div>
-                    <div class="pb-4 pt-1 ms-2 align-content-center text-center fw-bolder">{{ flight.airway.departure_airport.international_code }}</div>
+                    <div class="pb-4 pt-1 ms-2 align-content-center text-center fw-bolder">
+                        {{ flight.airway.departure_airport.international_code }}</div>
                 </div>
-                <div class="align-content-center pb-3">В пути: {{ flight.airway.flight_duration_hhmm }}</div>
+                <div class="align-content-center">
+                    <div class="h-50 text-center align-content-end pt-2">В пути: {{ flight.airway.flight_duration_hhmm }}</div>
+                    <div class="h-50 text-center align-content-end">Осталось билетов: {{ flight.tickets_count }}</div>
+                </div>
                 <div class="d-inline-flex">
                     <div class="pb-4 pt-1 me-2 align-content-center text-center fw-bolder">{{ flight.airway.destination_airport.international_code }}</div>
                     <div class="me-1">
@@ -29,15 +33,18 @@
             </div>
         </div>
         <div class="col-2 p-1">
-            <a class="btn btn-secondary w-100 h-100" href="{% url 'ticket_view' flight_slug=flight.slugField add_lug=0 %}">
+            <a class="btn btn-secondary w-100 h-100"
+                href="{% url 'ticket_view' flight_slug=flight.slugField add_lug=0 %}">
                 <div class="h-50 fw-bolder align-content-center">Эконом Базовый</div>
                 <div class="h-50 fs-3 fw-bold">{{ flight.price }} ₽</div>
             </a>
         </div>
         <div class="col-2 p-1">
-            <a class="btn button-ticket-plus-color w-100 h-100" href="{% url 'ticket_view' flight_slug=flight.slugField add_lug=1 %}">
-                <div class="h-50 fw-bolder align-content-center">Эконом Плюс <img src="{% static 'imgs/suitcase-lg-fill.svg' %}"/></div>
-                <div class="h-50 fs-3 fw-bold" href="">{{ flight.extra_lug_price }} ₽</div>
+            <a class="btn button-ticket-plus-color w-100 h-100"
+                href="{% url 'ticket_view' flight_slug=flight.slugField add_lug=1 %}">
+                <div class="h-50 fw-bolder align-content-center">Эконом Плюс <img
+                        src="{% static 'imgs/suitcase-lg-fill.svg' %}" /></div>
+                <div class="h-50 fs-3 fw-bold">{{ flight.extra_lug_price }} ₽</div>
             </a>
         </div>
     </div>
