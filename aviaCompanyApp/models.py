@@ -32,7 +32,7 @@ class CustomUserManager(BaseUserManager):
     
 class FlightManager(models.Manager):
     def get_flight_by_cities_and_date_ordtime(self, dep_city, dest_city, date):
-        return self.annotate(tickets_count=models.Count('flightseat', filter=models.Q(flightseat__ticket_num__isnull=True))).select_related('airway').filter(airway__departure_airport__nearest_city=dep_city, 
+        return self.select_related('airway').annotate(tickets_count=(models.F('airway__plane__load_capacity') - models.Count('ticket'))).filter(airway__departure_airport__nearest_city=dep_city, 
                                                                airway__destination_airport__nearest_city=dest_city, 
                                                                date_departure=date, tickets_count__gt=0).order_by('time_arrival')
     
@@ -66,7 +66,7 @@ class Doc(models.Model):
     owner = models.ForeignKey(to=CustomUser, on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ['number', 'type', 'date_of_issue', 'custom_name']
+        unique_together = [['number', 'type', 'date_of_issue', 'custom_name'], ['custom_name', 'owner']]
     
 
 class Pilot(models.Model): 
@@ -237,13 +237,21 @@ class Ticket(models.Model):
         ('NO','Не забронирован'),
         ('YES','Забронирован')
     )
+    ticket_slug = models.SlugField(unique=True, db_index=True)
     client = models.ForeignKey(to=CustomUser, on_delete=models.CASCADE)
     flight = models.ForeignKey(to=Flight, on_delete=models.PROTECT)
     booking_status = models.CharField(choices=STATUS_CHOICES)
     services = models.ManyToManyField(Service)
     price = models.IntegerField()
-    paid = models.BooleanField(default=False)
     document = models.ForeignKey(to=Doc, on_delete=models.PROTECT, null=True)
+
+    class Meta:
+        unique_together=['client', 'flight']
+    
+    def save(self, *args, **kwargs):
+        if not self.ticket_slug:
+            self.ticket_slug = slugify(str(self.flight) + str(self.client.email.split('@')[0]))
+        return super(Ticket, self).save(*args, **kwargs)
 
 class FlightSeat(models.Model):
     flight = models.ForeignKey(to=Flight, on_delete=models.CASCADE)

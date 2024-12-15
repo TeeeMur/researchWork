@@ -1,0 +1,54 @@
+{% extends 'layouts/main_layout.html' %}
+{% load static %}
+
+
+{% block content %}
+<div class="index-back-image">
+    <div class="container">
+        <div class="row justify-content-center pt-5">
+            <div class="col-lg-10 col-12 bg-light rounded">
+                <h2 class="m-4">№ билета: {{ curr_ticket.ticket_slug }}</h2>
+                <div class="container border rounded mt-2 mb-2 ms-1 me-1 p-1">
+                    <div class="row m-0">
+                        <div class="col-8">
+                            <div class="w-100 d-inline-flex justify-content-between">
+                                <h4 class="ms-1 mt-2 mb-0">Bauman Airlines</h4>
+                                <div class="me-2 mt-2 fw-normal fs-5">Рейс: {{ curr_ticket.flight.airway.number }}</div>
+                            </div>
+                            <div class="ps-1 w-100 d-inline-flex justify-content-between mb-1">
+                                <div class="d-inline-flex">
+                                    <div class="ms-1">
+                                        <div class="align-content-center">
+                                            <div class="fw-bold fs-1">{{ curr_ticket.flight.time_departure|time:"H:i" }}</div>
+                                            <div class="text-center fw-bolder">{{ curr_ticket.flight.date_departure|date:"d M" }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="pb-4 pt-1 ms-2 align-content-center text-center fw-bolder">
+                                        {{ curr_ticket.flight.airway.departure_airport.international_code }}</div>
+                                </div>
+                                <div class="align-content-center">
+                                    <div class="h-50 text-center align-content-end pt-2">В пути: {{ curr_ticket.flight.airway.flight_duration_hhmm }}</div>
+                                </div>
+                                <div class="d-inline-flex">
+                                    <div class="pb-4 pt-1 me-2 align-content-center text-center fw-bolder">{{ curr_ticket.flight.airway.destination_airport.international_code }}</div>
+                                    <div class="me-1">
+                                        <div class="align-content-center">
+                                            <div class="fw-bold fs-1">{{ curr_ticket.flight.time_arrival|time:"H:i" }}</div>
+                                            <div class="text-center fw-bolder">{{ curr_ticket.flight.date_arrival|date:"d M" }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-4 btn-like-color-primary w-100 h-100 rounded">
+                            <div class="h-50 fs-3 fw-bold text-center text-light align-content-start">{{ curr_ticket.price }} ₽</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -12,12 +12,12 @@
             <div>
                 {% if each_service.name == 'Дополнительный багаж' %}
                     {% if add_lug == 1 %}
-                        <input type="checkbox" id="{{ each_service.name }}" checked disabled/>
+                        <input type="checkbox" id="{{ each_service.name }}" name="{{ each_service.name }}" checked disabled/>
                     {% else %}
-                    <input type="checkbox" id="{{ each_service.name }}"/>
+                    <input type="checkbox" name="{{ each_service.name }}" id="{{ each_service.name }}"/>
                     {% endif %}
                 {% else %}
-                    <input type="checkbox" id="{{ each_service.name }}"/>
+                    <input type="checkbox" name="{{ each_service.name }}" id="{{ each_service.name }}"/>
                 {% endif %}
                 <label for="{{ each_service.name }}">Добавить</label>
             </div>

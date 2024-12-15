@@ -1,0 +1,18 @@
+{% extends 'layouts/main_layout.html' %}
+{% load static %}
+
+
+{% block content %}
+<div class="index-back-image">
+    <div class="container">
+        <div class="row justify-content-center pt-5">
+            <div class="col-lg-10 col-12 bg-light rounded">
+                <h4 class="text-center">Ваши билеты:</h4>
+                {% for flight in profile_tickets %}
+                    {% include 'components/profile_tickets_card.html' %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

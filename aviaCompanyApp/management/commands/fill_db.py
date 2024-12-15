@@ -64,12 +64,12 @@ class Command(BaseCommand):
 
         users = [
             CustomUser(first_name=faker.first_name_female(), surname=faker.last_name_female(), email=f'{i}_{faker.safe_email()}', phone_num=faker.msisdn()[:10], 
-                       miles_balance=random.randint(100, 10000), password=faker.msisdn()[:10])
+                       password=faker.msisdn()[:10])
             for i in range(300)
         ]
         users.extend([
             CustomUser(first_name=faker.first_name_male(), surname=faker.last_name_male(), email=f'{i}_{faker.safe_email()}', phone_num=faker.msisdn()[:10], 
-                       miles_balance=random.randint(100, 10000), password=faker.msisdn()[:10])
+                       password=faker.msisdn()[:10])
             for i in range(300)
         ])
         CustomUser.objects.bulk_create(users)

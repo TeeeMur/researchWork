@@ -29,4 +29,7 @@ urlpatterns = [
     path('profile/docs/', views.profile_docs, name='profile.docs'),
     path('logout/', views.logout, name='logout'),
     path('ticket_view/<slug:flight_slug>/<int:add_lug>/', views.ticket_view, name='ticket_view'),
+    path('my_ticket/', views.my_ticket, name='my_ticket'),
+    path('personal_tickets/', views.profile_tickets, name='profile.tickets'),
+    path('search_ticket/', views.search_ticket, name='search_ticket'),
 ]

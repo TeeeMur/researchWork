@@ -12,7 +12,7 @@
                         {% for field in loginForm %}
                             {{ field }}
                         {% endfor %}
-                        <label class="form-check-label">Я не робот</label>
+                        <label class="form-check-label" for="login_not_a_robot">Я не робот</label>
                         {{ loginForm.non_field_errors }}
                         <button class="btn btn-outline-primary w-100 mb-2" type="submit">Войти</button>
                     </form>
