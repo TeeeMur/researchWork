@@ -105,64 +105,77 @@ def profile(request):
     return render(request, 'profile.html', {'profileForm': profileForm})
 
 @login_required
-def profile_docs(request):
-    docsForms = [DocForm(), DocForm()]
+def user_docs(request):
+    docsForms = []
     docs = list(Doc.objects.filter(owner=request.user))
-    for i in range(len(docs)):
-        docsForms[i] = DocForm(instance=docs[i], initial={'added_check': True})
+    if docs:
+        for i in range(len(docs)):
+            docsForms.append(DocForm(instance=docs[i], initial={'added_check': True}))
+    if len(docs) != 10:
+        docsForms.append(DocForm())
     if request.method == "POST":
         url_next = request.GET.get('next')
         doc_num = -1
         prev_custom_name = None
-        if len(docs) == 1 and docs[0].custom_name in request.POST:
-            inputDocForm = DocForm(request.POST, instance=docs[0])
-            doc_num = 0
-            prev_custom_name = docs[0].custom_name
-        elif len(docs) > 1 and docs[1].custom_name in request.POST:
-            inputDocForm = DocForm(request.POST, instance=docs[1])
-            doc_num = 1
-            prev_custom_name = docs[1].custom_name
+        for i in range(len(docs)):
+            if docs[i].custom_name in request.POST:
+                inputDocForm = DocForm(request.POST, instance=docs[i])
+                doc_num=i
+                prev_custom_name = docs[i].custom_name
+                break
         else:
             inputDocForm = DocForm(request.POST)
         if inputDocForm.is_valid():
-            if inputDocForm.cleaned_data['added_check'] == False and doc_num > -1:
-                docs[doc_num].delete()
-                docsForms = [DocForm(), DocForm()]
-                docs = list(Doc.objects.filter(owner=request.user))
-                for i in range(len(docs)):
-                    docsForms[i] = DocForm(instance=docs[i], initial={'added_check': True})
-                messages.add_message(request=request, level=messages.INFO, message='Документы были успешно изменены')
-                if url_next:
-                    return redirect(url_next)
-                return render(request, 'profile_docs.html', {'docsForms': docsForms})
-            elif inputDocForm.cleaned_data['added_check'] == False:
-                docsForms[0] = inputDocForm
-                messages.add_message(request=request, level=messages.WARNING, message='Если хотите сохранить документ, отметьте пункт \"Добавлен\"')
-                messages.add_message(request=request, level=messages.WARNING, message='Для удаления cохраненного документа оставьте пустым пункт \"Добавлен\"')
-                return render(request, 'profile_docs.html', {'docsForms': docsForms})
-            inputDoc = inputDocForm.save(commit=False)
-            if prev_custom_name is not None:
-                moved_doc_pk = Doc.objects.get(owner=request.user, custom_name=prev_custom_name).pk
-                inputDoc.id = moved_doc_pk  
-            inputDoc.owner = request.user
-            inputDoc.save()
-            docsForms = [DocForm(), DocForm()]
-            docs = list(Doc.objects.filter(owner=request.user))
-            for i in range(len(docs)):
-                docsForms[i] = DocForm(instance=docs[i], initial={'added_check': True})
-            if request.GET.get('next'):
-                return redirect(request.GET.get('next'))
-            messages.add_message(request=request, level=messages.INFO, message='Документы были успешно изменены')
-            if url_next:
-                    return redirect(url_next)
-            return render(request, 'profile_docs.html', {'docsForms': docsForms})
+            if prev_custom_name == None:
+                if inputDocForm.cleaned_data['added_check'] == False:
+                    docsForms[-1] = inputDocForm
+                    messages.add_message(request=request, level=messages.WARNING, message='Если хотите сохранить документ, отметьте пункт \"Сохранить\"')
+                    return render(request, 'profile_docs.html', {'docsForms': docsForms})
+                else:
+                    inputDoc = inputDocForm.save(commit=False)
+                    inputDoc.owner = request.user
+                    inputDoc.save()
+                    if url_next:
+                        return redirect(url_next)
+                    messages.add_message(request=request, level=messages.INFO, message=f'Документ {inputDocForm.cleaned_data['custom_name']} был успешно добавлен')
+                    docsForms[-1] = DocForm(instance=inputDoc, initial={'added_check': True})
+                    if len(docsForms) != 10:
+                        docsForms.append(DocForm())
+            else:
+                if inputDocForm.cleaned_data['added_check'] == False:
+                    doc_to_delete = docs[doc_num]
+                    docsForms.pop(doc_num)
+                    if len(docsForms) == 9:
+                        docsForms.append(DocForm())
+                    doc_to_delete.delete()
+                    messages.add_message(request=request, level=messages.INFO, message=f'Документ {inputDocForm.cleaned_data['custom_name']} был успешно удален')
+                else:
+                    inputDoc = inputDocForm.save(commit=False)
+                    inputDoc.pk = docs[doc_num].pk
+                    inputDoc.save()
+                    messages.add_message(request=request, level=messages.INFO, message=f'Документ {inputDocForm.cleaned_data['custom_name']} был успешно изменен')
+                    docsForms[doc_num] = DocForm(instance=inputDoc)
     return render(request, 'profile_docs.html', {'docsForms': docsForms})
 
 
 def my_ticket(request):
-    curr_ticket = request.GET.get('curr_ticket')
-    services_for_flight = Flight.objects.get_services_for_flight(curr_ticket.flight)
-    return render(request, 'ticket_booking.html', {'curr_ticket': curr_ticket})
+    curr_ticket_slug = request.GET.get('curr_ticket_slug')
+    curr_ticket = Ticket.objects.get(ticket_slug=curr_ticket_slug)
+    services_for_flight = Service.objects.get_services_for_flight_by_ticket(curr_ticket)
+    if not curr_ticket.flightseat and curr_ticket.flight.status == 'EXP':
+        can_choose_seat = Service.objects.get(name='Выбор места') in set(services_for_flight).intersection(set(curr_ticket.services.all()))
+        if can_choose_seat:
+            if request.method == 'POST':
+                chooseSeatForm = ChooseSeatForm(request.POST)
+                if chooseSeatForm.is_valid():
+                    flightseat = chooseSeatForm.seat_number
+                    curr_ticket.flightseat = flightseat
+                    curr_ticket.save()
+        else:
+            if request.method == 'POST':
+                request_params = request.POST
+    return render(request, 'ticket_booking.html', {'curr_ticket': curr_ticket, 'services_for_flight': services_for_flight, 
+                                                   'choose_seat_form': chooseSeatForm})
 
 def search_ticket(request):
     ticket_surname = request.GET.get('surname')
@@ -174,5 +187,36 @@ def search_ticket(request):
 @login_required
 def profile_tickets(request):
     curr_profile = request.user
-    profile_tickets = Ticket.objects.filter(client=curr_profile).all()
+    profile_tickets = Ticket.objects.filter(client=curr_profile).all().order_by('-flight__date_departure', '-flight__time_departure')
     return render(request, 'profile_tickets.html', {'profile_tickets': profile_tickets})
+
+
+@login_required
+def ticket_preview(request, flight_slug, add_lug):
+    curr_flight = Flight.objects.get(slugField=flight_slug)
+    available_services = Service.objects.get_services_for_flight(curr_flight)
+    client_docs = Doc.objects.filter(owner=request.user).all()
+    if request.method == 'POST':
+        request_params = request.POST
+        
+
+    return render(request, 'buy_ticket_menu.html', {'curr_flight': curr_flight, 'add_lug': add_lug, 'available_services': available_services, 
+                                                    'client_docs': client_docs})
+
+@login_required
+def curr_ticket_preview(request, flight_slug, add_lug):
+    curr_flight = Flight.objects.get(slugField=flight_slug)
+    available_services = Service.objects.get_services_for_flight(curr_flight)
+    client_docs = Doc.objects.filter(owner=request.user).all()
+    if request.method == 'POST':
+        params = request.POST
+        print(params)
+        print('A;KDFJA;SLDFJKAS;LDJFSD;LFJK;LJK;FLDAJK;FLAKDSJ')
+        print(params['client_doc'])
+        curr_doc = Doc.objects.get(owner=request.user, custom_name=params['client_doc'])
+        new_ticket = Ticket(client=request.user, cart=Cart.objects.get(client=request.user), flight=curr_flight, price=curr_flight.price, document=curr_doc)
+        new_ticket.save()
+        for each_service_name in params.getlist('services'):
+            new_ticket.services.add(Service.objects.get(name=each_service_name))
+    return render(request, 'buy_ticket_menu_copy.html', {'curr_flight': curr_flight, 'add_lug': add_lug, 'available_services': available_services, 
+                                                    'client_docs': client_docs})

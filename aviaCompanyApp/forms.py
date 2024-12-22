@@ -60,14 +60,23 @@ class UpdateUserForm(forms.ModelForm):
         fields = ['first_name', 'surname', 'email', 'phone_num']
 
 class DocForm(forms.ModelForm):
-    added_check = forms.BooleanField(widget=forms.CheckboxInput(attrs={'class': 'form-check-input ms-2 mb-3'}), label='Добавлен', required=False)
-    custom_name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control mb-1'}))
+    added_check = forms.BooleanField(widget=forms.CheckboxInput(attrs={'class': 'form-check-input ms-2 mb-3'}), label='Сохранить', required=False)
+    custom_name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control mb-1'}), label='Название документа')
+    surname = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control mb-1'}), label='Фамилия')
+    first_name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control mb-1'}), label='Имя')
     type = forms.ChoiceField(choices=models.Doc.TYPE_CHOICES, widget=forms.Select(attrs={'class': 'form-select mb-1'}), label='Тип документа')
-    number = forms.CharField(max_length=10, min_length=10, required=True, widget=forms.TextInput(attrs={'class': 'form-control mb-1'}), label='Серия и номер документа')
+    number = forms.CharField(max_length=10, min_length=10, required=True, widget=forms.TextInput(attrs={'class': 'form-control mb-2'}), label='Серия и номер документа')
     date_of_issue = forms.DateField(widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 
                                                                 'min': datetime.date.today() + datetime.timedelta(weeks=-3650),
                                                                 'max': datetime.date.today()}, format=('%Y-%m-%d')), label='Дата выдачи')
     class Meta:
         model = models.Doc
-        fields = ['added_check', 'custom_name', 'type', 'date_of_issue', 'number']
+        fields = ['added_check', 'custom_name', 'surname', 'first_name', 'type', 'date_of_issue', 'number']
+
+class ChooseSeatForm(forms.Form):
+    seat_number = forms.ModelChoiceField(queryset=models.FlightSeat.objects.none())
+
+    def __init__(self, flight, *args, **kwargs):
+        super(ChooseSeatForm, self).__init__(*args, **kwargs)
+        self.fields['seat_number'].queryset = models.FlightSeat.objects.filter(flight=flight).all()
 

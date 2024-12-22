@@ -24,13 +24,12 @@
                     {% csrf_token %}
                     {% for docField in docForm %}
                         {% if docField.name == 'added_check' %}
-                            {{ docField }} {{ docField.label }}
-                            <div></div>
+                            <div><label>{{ docField }} {{ docField.label }}</label></div>
                         {% else %}
                             {{ docField.label }}{{ docField }}
                         {% endif %}
                     {% endfor %}
-                    <button class="btn btn-primary w-100" type="submit" name="{{ docForm.custom_name.value }}">Сохранить</button>
+                    <button class="btn btn-primary w-100" type="submit" name="{{ docForm.custom_name.value }}">Готово</button>
                 </form>
                 {% endfor %}
             </div>

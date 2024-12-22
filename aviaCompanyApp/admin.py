@@ -11,6 +11,13 @@ admin.site.register(Service)
 admin.site.register(Staff)
 admin.site.register(Flight)
 admin.site.register(FlightSeat)
-admin.site.register(Ticket)
+
+class TicketInline(admin.TabularInline):
+    model = FlightSeat
+
+class TicketAdmin(admin.ModelAdmin):
+    inlines = [TicketInline,]
+
+admin.site.register(Ticket, TicketAdmin)
 admin.site.register(PassengerPlane)
 admin.site.register(Weekday)

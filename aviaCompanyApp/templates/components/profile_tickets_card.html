@@ -1,13 +1,72 @@
 {% load static %}
 
-<div class="container">
+<div class="container border rounded p-2 mb-2">
     <div class="row m-0">
-        <div class="col-8">
+        <div class="w-100 d-inline-flex justify-content-between">
             <h4>Bauman airlines</h4>
-            <div>Номер билета: {{ each_ticket.slugField }}</div>
+            <div class="fs-5">Рейс: {{ each_ticket.flight.airway.number }}</div>
+            <div class="fs-5 me-1">Номер билета: {{ each_ticket.ticket_slug }}</div>
         </div>
-        <div class="col-4">
-            <a class="btn button-ticket-plus-color">Перейти к билету</a>
+        <div class="col-10 pe-0">
+            <div class="row m-0">
+                <div class="col-3 ps-0">
+                    <div class="buy-ticket-menu-date rounded pt-1 pb-1 h-100 align-content-center">
+                        <div class="w-100 text-center fs-5">{{ each_ticket.flight.date_departure|date:"l" }}</div>
+                        <div class="w-100 text-center fw-bold fs-2">{{ each_ticket.flight.date_departure|date:"d" }}
+                        </div>
+                        <div class="w-100 text-center fs-4">{{ each_ticket.flight.date_departure|date:"F" }}</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    {% if each_ticket.flight.status == 'EXP' %}
+                        {% if each_ticket.flightseat %}
+                        <div class="w-100 fs-4 text-success text-center">Место в салоне: {{ each_ticket.flightseat.seat_num }}</div>
+                        {% else %}
+                        <div class="w-100 fs-5 text-warning text-center">Регистрация открыта, выберите место и услуги</div>
+                        {% endif %}
+                    {% elif each_ticket.flight.status == 'PLD' %}
+                        <div class="w-100 fs-4 text-center">Регистрация ожидается</div>
+                    {% elif each_ticket.flight.status == 'PRP' %}
+                        <div class="w-100 fs-4 text-success text-center">Посадка на рейс начата</div>
+                    {% elif each_ticket.flight.status == 'PLD' %}
+                        <div class="w-100 fs-4 text-center">Посадка на рейс окончена</div>
+                    {% elif each_ticket.flight.status == 'DLD' %}
+                        <div class="w-100 fs-4 text-center">Рейс задерживается</div>
+                    {% elif each_ticket.flight.status == 'CLD' %}
+                        <div class="w-100 fs-4 text-danger text-center">Рейс отменен</div>
+                    {% elif each_ticket.flight.status == 'IFL' %}
+                        <div class="w-100 fs-4 text-danger text-center">В процессе</div>
+                    {% else %}
+                        <div class="w-100 fs-4 text-danger text-center">Рейс завершен</div>
+                    {% endif %}
+                    <div class="w-100 d-inline-flex justify-content-between mb-1">
+                        <div class="">
+                            <div class="align-content-center">
+                                <div class="fw-bold fs-2">{{ each_ticket.flight.time_departure|time:"H:i" }}</div>
+                            </div>
+                            <div class="align-content-center text-center fw-bolder">{{ each_ticket.flight.airway.departure_airport.international_code }}</div>
+                        </div>
+                        <div class="align-content-center pt-1">В пути: {{ each_ticket.flight.airway.flight_duration_hhmm }}</div>
+                        <div class="">
+                            <div class="align-content-center">
+                                <div class="fw-bold fs-2">{{ each_ticket.flight.time_arrival|time:"H:i" }}</div>
+                            </div>
+                            <div class="align-content-center text-center fw-bolder">{{ each_ticket.flight.airway.destination_airport.international_code }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="buy-ticket-menu-date rounded pt-1 pb-1 h-100 align-content-center">
+                        <div class="w-100 text-center fs-5">{{ each_ticket.flight.date_arrival|date:"l" }}</div>
+                        <div class="w-100 text-center fw-bold fs-2">{{ each_ticket.flight.date_arrival|date:"d" }}</div>
+                        <div class="w-100 text-center fs-4">{{ each_ticket.flight.date_arrival|date:"F" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-2 align-content-end ps-0">
+            <a class="w-100 btn button-ticket-plus-color fw-bold fs-5 h-100 align-content-center"
+                href="{% url 'my_ticket' %}?curr_ticket_slug={{ each_ticket.ticket_slug }}">Перейти к билету</a>
         </div>
     </div>
 </div>

@@ -8,7 +8,6 @@ from django.template.defaultfilters import slugify
 
 phone_regex = RegexValidator(regex=r'^\+?\d{9,15}$', message='Некорректный номер телефона')
 airport_code_validator = RegexValidator(regex=r'^[A-Z][A-Z][A-Z][A-Z]?$')
-MILES_COEFF = 0.1
 
 
 class CustomUserManager(BaseUserManager):
@@ -19,6 +18,7 @@ class CustomUserManager(BaseUserManager):
         user = self.model(email=email)
         user.set_password(password)
         user.save()
+        Cart.objects.create(client=user)
         return user
     
     def create_superuser(self, email, password):
@@ -28,17 +28,20 @@ class CustomUserManager(BaseUserManager):
         user = self.model(email=email, is_staff=True, is_superuser=True)
         user.set_password(password)
         user.save()
+        Cart.objects.create(client=user)
         return user
     
 class FlightManager(models.Manager):
     def get_flight_by_cities_and_date_ordtime(self, dep_city, dest_city, date):
         return self.select_related('airway').annotate(tickets_count=(models.F('airway__plane__load_capacity') - models.Count('ticket'))).filter(airway__departure_airport__nearest_city=dep_city, 
                                                                airway__destination_airport__nearest_city=dest_city, 
-                                                               date_departure=date, tickets_count__gt=0).order_by('time_arrival')
+                                                               date_departure=date, tickets_count__gt=0, status='PLD').order_by('time_arrival')
     
 class ServicesManager(models.Manager):
     def get_services_for_flight(self, flight):
         return self.filter(airway=flight.airway).all()
+    def get_services_for_flight_by_ticket(self, ticket):
+        return self.filter(airway=ticket.flight.airway).all()
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     MAX_DOCS = 2
@@ -57,10 +60,13 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 class Doc(models.Model):
     TYPE_CHOICES = (
         ('PSP', 'Паспорт'),
+        ('BRT', 'Свидетельство о рождении'),
         ('IPS', 'Заграничный паспорт'), 
     )
     type = models.CharField(choices=TYPE_CHOICES)
     custom_name = models.CharField(max_length=40)
+    first_name = models.CharField(max_length=43)
+    surname = models.CharField(max_length=43)
     number = models.CharField(validators=[RegexValidator(regex=r'^\d{10}$')])
     date_of_issue = models.DateField()
     owner = models.ForeignKey(to=CustomUser, on_delete=models.CASCADE)
@@ -186,12 +192,13 @@ class Weekday(models.Model):
 
 class Flight(models.Model):
     STATUS_CHOICES = (
-        ('EXP','Ожидается'),
-        ('CLD','Отменен'),
         ('PLD', 'Запланирован'),
-        ('DLD','Задерживается'),
+        ('EXP','Ожидается'),
+        ('PRP', 'В подготовке'),
         ('IFL','В полете'),
         ('CTD','Выполнен'),
+        ('CLD','Отменен'),
+        ('DLD','Задерживается'),
     )
     slugField = models.SlugField(unique=True, db_index=True)
     airway = models.ForeignKey(to=Airway, on_delete=models.PROTECT)
@@ -211,7 +218,7 @@ class Flight(models.Model):
         return self.price + Service.objects.filter(name='Дополнительный багаж').first().price
     
     def __str__(self):
-        return f'{self.airway.number} {self.date_departure}'
+        return f'{self.airway.number}{self.date_departure}'
     
     def save(self, *args, **kwargs):
         approved_weekdays = list(Weekday.objects.filter(airway=self.airway).values_list('day', flat=True))
@@ -232,31 +239,43 @@ class Flight(models.Model):
             FlightSeat.objects.bulk_create(seats)
         return self
 
+class Cart(models.Model):
+    client = models.OneToOneField(to=CustomUser, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return str(self.client)
+
 class Ticket(models.Model):
-    STATUS_CHOICES = (
-        ('NO','Не забронирован'),
-        ('YES','Забронирован')
-    )
     ticket_slug = models.SlugField(unique=True, db_index=True)
-    client = models.ForeignKey(to=CustomUser, on_delete=models.CASCADE)
+    client = models.ForeignKey(to=CustomUser, on_delete=models.DO_NOTHING)
+    cart = models.ForeignKey(to=Cart, on_delete=models.PROTECT, null=True)
     flight = models.ForeignKey(to=Flight, on_delete=models.PROTECT)
-    booking_status = models.CharField(choices=STATUS_CHOICES)
     services = models.ManyToManyField(Service)
     price = models.IntegerField()
-    document = models.ForeignKey(to=Doc, on_delete=models.PROTECT, null=True)
+    document = models.ForeignKey(to=Doc, on_delete=models.PROTECT)
+    purchased = models.BooleanField(default=False)
 
-    class Meta:
-        unique_together=['client', 'flight']
+    def __str__(self):
+        return f'{self.ticket_slug}'
     
     def save(self, *args, **kwargs):
         if not self.ticket_slug:
-            self.ticket_slug = slugify(str(self.flight) + str(self.client.email.split('@')[0]))
+            self.ticket_slug = slugify(str(self.flight) + str(self.client.email.split('@')[0]) + str(self.document.custom_name.replace(" ", "_")))
         return super(Ticket, self).save(*args, **kwargs)
-
+    
+    class Meta:
+        unique_together = [['flight', 'document'], ['flight', 'document', 'cart']]
+    
 class FlightSeat(models.Model):
     flight = models.ForeignKey(to=Flight, on_delete=models.CASCADE)
     seat_num = models.CharField(validators=[RegexValidator(r'^\d\d?[A-F]$')])
     ticket_num=models.OneToOneField(to=Ticket, on_delete=models.SET_NULL, null=True)
 
+    def clean(self):
+        if self.ticket_num != None and self.ticket_num.flight != self.flight:
+            return ValidationError('Место и билет должны относиться к одному полету!')
+        return super().clean()
+
     def __str__(self):
         return f'{self.flight} {self.seat_num}'
+    
