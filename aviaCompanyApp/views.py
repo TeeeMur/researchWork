@@ -153,6 +153,8 @@ def user_docs(request):
                     inputDoc = inputDocForm.save(commit=False)
                     inputDoc.pk = docs[doc_num].pk
                     inputDoc.save()
+                    if url_next:
+                        return redirect(url_next)
                     messages.add_message(request=request, level=messages.INFO, message=f'Документ {inputDocForm.cleaned_data['custom_name']} был успешно изменен')
                     docsForms[doc_num] = DocForm(instance=inputDoc)
     return render(request, 'profile_docs.html', {'docsForms': docsForms})

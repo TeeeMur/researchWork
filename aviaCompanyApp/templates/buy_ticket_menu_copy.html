@@ -72,22 +72,27 @@
                                 {% for client_doc in client_docs %}
                                     {% include 'components/client_doc_for_ticket.html' %}
                                 {% endfor %}
-                                {% else %}
-                                <div class="w-100 d-inline-flex justify-content-center">
-                                    <a class="btn btn-primary m-2" href="{% url 'profile.docs' %}">Добавить документ</a>
-                                </div>
                                 {% endif %}
+                                <div class="w-100 d-inline-flex justify-content-center">
+                                    <a class="btn btn-primary m-2" href="{% url 'profile.docs' %}?next={{ request.get_full_path }}">Добавить документ</a>
+                                </div>
                             </div>
                             <div class="border rounded mt-1 p-2 w-100">
-                                <ol class="service-added-list ps-1 pe-1">
-                                    <li class="w-100 d-inline-flex justify-content-between">
+                                <ol class="service-added-list ps-1 pe-1" id="service-added-list">
+                                    <li id="{{ each_service.name }}-list-item" class="w-100 d-inline-flex justify-content-between">
                                         <div class="fs-5">Билет</div>
                                         <div class="fs-5">{{ curr_flight.price }}</div>
                                     </li>
+                                    {% comment %} {% for each_service in available_services %}
+                                    <li id="{{ each_service.name }}-list-item" class="w-100 d-inline-flex justify-content-between" hidden>
+                                        <div class="fs-5">{{ each_service.name }}</div>
+                                        <div class="fs-5">{{ each_service.price }}</div>
+                                    </li>
+                                    {% endfor %} {% endcomment %}
                                 </ol>
                                 <div class="w-100 d-inline-flex justify-content-between ps-1 pe-1 mb-2">
                                     <div class="fs-4">Итого:</div>
-                                    <div class="fs-5 services-sum">{{ curr_flight.price }}</div>
+                                    <div class="fs-5 services-sum" id="services_sum">{{ curr_flight.price }}</div>
                                 </div>
                                 <button class="w-100 btn button-ticket-plus-color" type="submit">Оплатить</button>
                             </div>

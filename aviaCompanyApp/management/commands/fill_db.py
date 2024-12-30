@@ -53,7 +53,7 @@ class Command(BaseCommand):
         services = [
             Service(type='LS', name='Дополнительный багаж', description='Возможность взять с собой в поездку помимо ручной клади багаж весом не более 23 кг.', 
                     price=1000),
-            Service(type='FFS', name='Дополнительный легкий перекус', 
+            Service(type='FFS', name='Легкий перекус', 
                     description='Дополнительный набор, в состав которого входит сытный бутерброд и напиток на выбор: вода, кофе или сок.', 
                     price=600),
             Service(type='LS', name='Перевозка спортивного инвентаря', description='Возможность взять с собой в поездку спортивный инвентарь, ' +
@@ -137,7 +137,7 @@ class Command(BaseCommand):
             Weekday(day=weekday, airway=airway) for weekday in Weekday.WEEK_DAYS for airway in airways_for_further_creates
         ]
         Weekday.objects.bulk_create(weekdays)
-        dates_for_flights = [datetime.date(year=2024, month=12, day=(18 + i)) for i in range(10)]
+        dates_for_flights = [datetime.date(year=2024, month=12, day=(22 + i)) for i in range(10)]
         flights = [
             Flight(airway=airway, date_departure=flight_date, status='PLD', price=(2000 + airway.flight_duration.total_seconds() // 60 * 24)) 
             for airway in airways_for_further_creates for flight_date in dates_for_flights

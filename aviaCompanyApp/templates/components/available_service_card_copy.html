@@ -12,10 +12,10 @@
             <div>
                 {% if each_service.name == 'Дополнительный багаж' %}
                     {% if add_lug == 1 %}
-                        <input id="add_lug" class="form-check-input service-check" type="hidden" id="{{ each_service.name }}" name="services" value="{{ each_service.name }}" checked="true"/>
+                        <input class="form-check-input service-check" type="hidden" id="{{ each_service.name }}" name="services" value="{{ each_service.name }}" checked="true"/>
                         <label for="{{ each_service.name }}">Добавлено</label>
                     {% else %}
-                        <input id="add_lug" class="form-check-input service-check" type="checkbox" name="{{ each_service.name }}" id="services" value="{{ each_service.name }}"/>
+                        <input class="form-check-input service-check" type="checkbox" name="{{ each_service.name }}" id="{{ each_service.name }}" value="{{ each_service.name }}"/>
                         <label for="{{ each_service.name }}">Добавить</label>
                     {% endif %}
                 {% else %}
