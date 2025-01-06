@@ -1,0 +1,71 @@
+{% load static %}
+
+<div class="container border rounded p-2 mb-2">
+        <div class="w-100 d-inline-flex justify-content-between">
+            <h4 class="ms-1">Bauman airlines</h4>
+            <div class="fs-5">Рейс: {{ each_ticket.flight.airway.number }}</div>
+            <div class="fs-5 me-1">Номер билета: {{ each_ticket.ticket_slug }}</div>
+        </div>
+            <div class="row m-0">
+                <div class="col-2 ps-0">
+                    <div class="buy-ticket-menu-date rounded pt-1 pb-1 h-100 align-content-center">
+                        <div class="w-100 text-center fs-5">{{ each_ticket.flight.date_departure|date:"l" }}</div>
+                        <div class="w-100 text-center fw-bold fs-2">{{ each_ticket.flight.date_departure|date:"d" }}
+                        </div>
+                        <div class="w-100 text-center fs-4">{{ each_ticket.flight.date_departure|date:"F" }}</div>
+                    </div>
+                </div>
+                <div class="col-4 align-content-center">
+                    <div class="w-100 d-inline-flex justify-content-between mb-1">
+                        <div class="align-content-between">
+                            <div class="align-content-center">
+                                <div class="fw-bold fs-2 text-center">{{ each_ticket.flight.time_departure|time:"H:i" }}</div>
+                            </div>
+                            <div class="align-content-center text-center fw-bolder">{{ each_ticket.flight.airway.departure_airport.international_code }}</div>
+                            <div class="align-content-center text-center">{{ each_ticket.flight.airway.departure_airport.nearest_city }}</div>
+                        </div>
+                        <div class="align-content-center pt-1">
+                            <div class="text-center">В пути: {{ each_ticket.flight.airway.flight_duration_hhmm }}</div>
+                            <div class="text-center">Документ: <br/><span class="fw-bolder">{{ each_ticket.document.custom_name }}</span></div>
+                        </div>
+                        <div class="align-content-between">
+                            <div class="align-content-center">
+                                <div class="fw-bold fs-2 text-center">{{ each_ticket.flight.time_arrival|time:"H:i" }}</div>
+                            </div>
+                            <div class="align-content-center text-center fw-bolder">{{ each_ticket.flight.airway.destination_airport.international_code }}</div>
+                            <div class="align-content-center text-center">{{ each_ticket.flight.airway.destination_airport.nearest_city }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-3 pe-1">
+                    <div class="buy-ticket-menu-date rounded pt-1 pb-1 h-100 align-content-center">
+                        {% if each_ticket.services.count %}
+                            <div class="w-100 text-center">Доп. услуги:</div>
+                            {% for each_service in each_ticket.services.all %}
+                                <div class="w-100 text-center">{{ each_service }}</div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="w-100 text-center">Без доп. услуг</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-1 ps-0 pe-1">
+                    <div class="buy-ticket-menu-date rounded pt-1 pb-1 h-100 align-content-center">
+                        <div class="w-100 text-center">Стоимость:</div>
+                        <div class="w-100 text-center fs-5">{{ each_ticket.price }} ₽</div>
+                    </div>
+                </div>
+                <div class="col-1 align-content-end ps-0 pe-1">
+                    <a class="w-100 h-100 btn button-ticket-plus-color fw-bold align-content-center text-center" 
+                    href="{% url "ticket_config_cart" ticket_slug=each_ticket.ticket_slug %}">
+                        <img src="{% static "imgs/edit_icon.svg" %}"/>
+                    </a>
+                </div>
+                <div class="col-1 align-content-end ps-0 pe-1">
+                    <a class="w-100 h-100 btn button-ticket-plus-color fw-bold align-content-center text-center" 
+                    href="{% url "ticket_remove" ticket_slug=each_ticket.ticket_slug %}">
+                        <img src="{% static 'imgs/trash_icon.svg' %}"/>
+                    </a>
+                </div>
+            </div>
+</div>

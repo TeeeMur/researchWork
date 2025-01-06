@@ -20,7 +20,7 @@
 .index-back-image {
     background-image: url('../imgs/plane_background.jpeg');
     width: 100%;
-    min-height: 800px;
+    min-height: 690px;
     filter: brightness(80%);
 }
 

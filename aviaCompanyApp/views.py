@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from .forms import *
 from .models import *
@@ -5,8 +6,7 @@ from django.urls import reverse
 from django.contrib import auth, messages
 from django.core.exceptions import NON_FIELD_ERRORS
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
-
+from django.views.decorators.http import require_POST
 # Create your views here.
 
 
@@ -25,38 +25,6 @@ def flight_search_results(request):
     extra_lug = Service.objects.filter(name='Дополнительный багаж').first()
     return render(request, 'flights_search_results.html', {'flightSearchResults': searchResults, 'buyTicketsForm': buyTicketsForm, 
                                                            'extra_lug': extra_lug})
-
-@login_required
-def ticket_view(request, flight_slug, add_lug):
-    curr_flight = Flight.objects.get(slugField=flight_slug)
-    available_services = Service.objects.get_services_for_flight(curr_flight)
-    client_docs = Doc.objects.filter(owner=request.user).all()
-    if request.method == 'POST':
-        doc = None
-        services = set()
-        price_sum = curr_flight.price
-        curr_ticket = Ticket(flight=curr_flight, client=request.user)
-        for each in request.POST:
-            if each in client_docs.values_list('custom_name', flat=True):
-                doc = Doc.objects.filter(owner=request.user, custom_name=each).first()
-            elif each in available_services.values_list('name', flat=True):
-                service = Service.objects.get(name=each)
-                price_sum += service.price
-                services.add(service)
-        if doc == None:
-            messages.add_message(request=request, message='Прикрепите, пожалуйста, документ', level=messages.WARNING)
-            return render(request, 'buy_ticket_menu.html', {'curr_flight': curr_flight, 'add_lug': add_lug, 'available_services': available_services, 
-                                                    'client_docs': client_docs})
-        curr_ticket.document = doc
-        curr_ticket.booking_status = 'NO'
-        curr_ticket.price = price_sum
-        print(price_sum)
-        curr_ticket.save()
-        for service in services:
-            curr_ticket.services.add(service)
-        return render(request, 'ticket_booking.html', {'curr_ticket': curr_ticket})
-    return render(request, 'buy_ticket_menu.html', {'curr_flight': curr_flight, 'add_lug': add_lug, 'available_services': available_services, 
-                                                    'client_docs': client_docs})
 
 def login(request):
     loginForm = LoginForm()
@@ -79,7 +47,6 @@ def login(request):
 def logout(request):
     auth.logout(request)
     return redirect(reverse('index'))
-
 
 def register(request):
     registerForm = RegisterForm() 
@@ -163,7 +130,7 @@ def user_docs(request):
 def my_ticket(request):
     curr_ticket_slug = request.GET.get('curr_ticket_slug')
     curr_ticket = Ticket.objects.get(ticket_slug=curr_ticket_slug)
-    services_for_flight = Service.objects.get_services_for_flight_by_ticket(curr_ticket)
+    services_for_flight = Service.objects.get_services_for_ticket(curr_ticket)
     if not curr_ticket.flightseat and curr_ticket.flight.status == 'EXP':
         can_choose_seat = Service.objects.get(name='Выбор места') in set(services_for_flight).intersection(set(curr_ticket.services.all()))
         if can_choose_seat:
@@ -176,34 +143,20 @@ def my_ticket(request):
         else:
             if request.method == 'POST':
                 request_params = request.POST
-    return render(request, 'ticket_booking.html', {'curr_ticket': curr_ticket, 'services_for_flight': services_for_flight, 
+    return render(request, 'bought_ticket_view.html', {'curr_ticket': curr_ticket, 'services_for_flight': services_for_flight, 
                                                    'choose_seat_form': chooseSeatForm})
 
-def search_ticket(request):
+def current_bought_ticket(request):
     ticket_surname = request.GET.get('surname')
     ticket_slug = request.GET.get('ticket_num')
     ticket = Ticket.objects.get(slugField=ticket_slug, client__surname=ticket_surname)
     return redirect(reverse('my_ticket', curr_ticket=ticket))
 
-
 @login_required
 def profile_tickets(request):
     curr_profile = request.user
-    profile_tickets = Ticket.objects.filter(client=curr_profile).all().order_by('-flight__date_departure', '-flight__time_departure')
+    profile_tickets = Ticket.objects.get_profile_purchased_tickets(curr_profile)
     return render(request, 'profile_tickets.html', {'profile_tickets': profile_tickets})
-
-
-@login_required
-def ticket_preview(request, flight_slug, add_lug):
-    curr_flight = Flight.objects.get(slugField=flight_slug)
-    available_services = Service.objects.get_services_for_flight(curr_flight)
-    client_docs = Doc.objects.filter(owner=request.user).all()
-    if request.method == 'POST':
-        request_params = request.POST
-        
-
-    return render(request, 'buy_ticket_menu.html', {'curr_flight': curr_flight, 'add_lug': add_lug, 'available_services': available_services, 
-                                                    'client_docs': client_docs})
 
 @login_required
 def curr_ticket_preview(request, flight_slug, add_lug):
@@ -212,13 +165,89 @@ def curr_ticket_preview(request, flight_slug, add_lug):
     client_docs = Doc.objects.filter(owner=request.user).all()
     if request.method == 'POST':
         params = request.POST
-        print(params)
-        print('A;KDFJA;SLDFJKAS;LDJFSD;LFJK;LJK;FLDAJK;FLAKDSJ')
-        print(params['client_doc'])
-        curr_doc = Doc.objects.get(owner=request.user, custom_name=params['client_doc'])
+        if 'client_doc' not in params:
+            messages.warning(request, "К билету необходимо прикрепить документ!")
+            return render(request, 'ticket_config.html', {'curr_flight': curr_flight, 'add_lug': add_lug, 'available_services': available_services, 
+                                                    'client_docs': client_docs})
+        curr_doc = Doc.objects.filter(owner=request.user, custom_name=params['client_doc']).first()
+        # if Ticket.objects.filter(client=request.user, flight=curr_flight, document=curr_doc).first():
+        #     messages.warning(request, "На этот рейс уже есть билет с документом " + curr_doc.custom_name + "!")
+        #     return render(request, 'ticket_config.html', {'curr_flight': curr_flight, 'add_lug': add_lug, 'available_services': available_services, 
+        #                                             'client_docs': client_docs})
         new_ticket = Ticket(client=request.user, cart=Cart.objects.get(client=request.user), flight=curr_flight, price=curr_flight.price, document=curr_doc)
         new_ticket.save()
         for each_service_name in params.getlist('services'):
-            new_ticket.services.add(Service.objects.get(name=each_service_name))
-    return render(request, 'buy_ticket_menu_copy.html', {'curr_flight': curr_flight, 'add_lug': add_lug, 'available_services': available_services, 
+            add_service = Service.objects.get(name=each_service_name)
+            new_ticket.services.add(add_service)
+            new_ticket.price += add_service.price
+        new_ticket.save()
+        if 'to_cart' in params:
+            return redirect(reverse('cart'))
+    return render(request, 'ticket_config.html', {'curr_flight': curr_flight, 'add_lug': add_lug, 'available_services': available_services, 
                                                     'client_docs': client_docs})
+
+@login_required
+def cart(request):
+    curr_cart_tickets = Ticket.objects.get_tickets_in_cart(client=request.user)
+    cart_sum = curr_cart_tickets.aggregate(models.Sum('price'))['price__sum']
+    if request.method == "POST":
+        docs_counter = False
+        last_tickets = Ticket.objects.count_last_tickets_cart(client=request.user)
+        tickets_count_map = dict()
+        tickets_list = list(curr_cart_tickets)
+        for each_ticket in tickets_list:
+            flight = each_ticket.flight
+            if flight in tickets_count_map:
+                tickets_count_map[flight] += 1
+            else:
+                tickets_count_map[flight] = 1
+            docs_count = Doc.objects.filter(models.Q(ticket__client=request.user)).count()
+            docs_counter = docs_count > 1 or docs_counter
+        for each_flight in list(tickets_count_map.keys()):
+            flight_last_tickets = last_tickets.filter(flight=each_flight).count()
+            if flight_last_tickets >= tickets_count_map[each_flight]:
+                tickets_count_map.pop(each_flight)
+        if len(tickets_count_map) != 0:
+            flights_string = ", ".join(list(tickets_count_map.keys()))
+            messages.warning(request, "На рейсы " + flights_string + " недостаточно билетов.")
+        if docs_counter:
+            messages.warning(request, 'На один документ оформлено несколько билетов!')
+        if len(messages.get_messages(request)) == 0:
+            curr_cart_tickets.update(purchased=True, cart=None)
+            return redirect(reverse('profile.tickets'))
+    return render(request, 'cart.html', {'cart_tickets': curr_cart_tickets, 'cart_sum': cart_sum})
+
+@login_required
+def ticket_config_from_cart(request, ticket_slug):
+    curr_ticket = Ticket.objects.get(cart=request.user.cart, ticket_slug=ticket_slug)
+    client_docs = Doc.objects.filter(owner=request.user).all()
+    available_services = Service.objects.get_services_for_flight_by_ticket(curr_ticket)
+    if request.method == 'POST':
+        chosen_doc = Doc.objects.get(owner=request.user, custom_name=request.POST['client_doc'])
+        curr_ticket.document = chosen_doc
+        curr_ticket.save()
+    return render(request, 'ticket_config_in_cart.html', {'curr_ticket': curr_ticket, 'available_services': available_services, 
+                                                    'client_docs': client_docs})
+
+@require_POST
+def edit_service_in_cart(request, ticket_slug, service_id):
+    curr_ticket = Ticket.objects.get(ticket_slug=ticket_slug)
+    curr_service = Service.objects.get(pk=service_id)
+    response = ''
+    if (curr_service in curr_ticket.services.all()):
+        curr_ticket.services.remove(curr_service)
+        curr_ticket.price -= curr_service.price
+        curr_ticket.save()
+        response = 'REMOVED'
+    else:
+        curr_ticket.services.add(curr_service)
+        curr_ticket.price += curr_service.price
+        curr_ticket.save()
+        response = 'ADDED'
+    return JsonResponse({'response': response, 'ticket_price': curr_ticket.price, 'service_name': curr_service.name, 'service_price': curr_service.price})
+
+
+def remove_ticket(request, ticket_slug):
+    curr_ticket = Ticket.objects.get(ticket_slug=ticket_slug)
+    curr_ticket.delete()
+    return redirect(reverse('cart'))

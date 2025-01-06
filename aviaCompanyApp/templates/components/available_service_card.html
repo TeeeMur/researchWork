@@ -1,8 +1,8 @@
 {% load static %}
-<div class="container border rounded mt-1 mb-3">
+<div class="container border rounded mt-1 mb-3 service-card">
     <div class="w-100 d-inline-flex justify-content-between mt-2">
-        <h4 class="ms-2">{{ each_service.name }}</h4>
-        <div class="align-content-center me-1 fs-5">{{ each_service.price }} ₽</div>
+        <h4 class="ms-2 service-name">{{ each_service.name }}</h4>
+        <div class="align-content-center me-1 fs-5"><span class="service-price">{{ each_service.price }}</span> ₽</div>
     </div>
     <div class="row m-0 mb-2">
         <div class="col-9">
@@ -12,14 +12,16 @@
             <div>
                 {% if each_service.name == 'Дополнительный багаж' %}
                     {% if add_lug == 1 %}
-                        <input type="checkbox" id="{{ each_service.name }}" name="{{ each_service.name }}" checked disabled/>
+                        <input class="form-check-input service-check" type="hidden" id="{{ each_service.name }}" name="services" value="{{ each_service.name }}" checked="true"/>
+                        <label for="{{ each_service.name }}">Добавлено</label>
                     {% else %}
-                    <input type="checkbox" name="{{ each_service.name }}" id="{{ each_service.name }}"/>
+                        <input class="form-check-input service-check" type="checkbox" name="{{ each_service.name }}" id="{{ each_service.name }}" value="{{ each_service.name }}"/>
+                        <label for="{{ each_service.name }}">Добавить</label>
                     {% endif %}
                 {% else %}
-                    <input type="checkbox" name="{{ each_service.name }}" id="{{ each_service.name }}"/>
+                    <input class="form-check-input service-check" type="checkbox" name="services" id="{{ each_service.name }}" value="{{ each_service.name }}"/>
+                    <label for="{{ each_service.name }}">Добавить</label>
                 {% endif %}
-                <label for="{{ each_service.name }}">Добавить</label>
             </div>
         </div>
     </div>

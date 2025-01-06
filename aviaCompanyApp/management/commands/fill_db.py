@@ -74,6 +74,7 @@ class Command(BaseCommand):
         ])
         CustomUser.objects.bulk_create(users)
         users_for_docs = list(CustomUser.objects.all())
+        Cart.objects.bulk_create([Cart(client=client) for client in users_for_docs])
         docs = [
             Doc(type='PSP', custom_name=f'{i + 1}_doc', date_of_issue=datetime.date(2010, 4, 10) + datetime.timedelta(weeks=i), 
                 number=faker.msisdn()[:10], owner=users_for_docs[i]) for i in range(600)
@@ -137,11 +138,13 @@ class Command(BaseCommand):
             Weekday(day=weekday, airway=airway) for weekday in Weekday.WEEK_DAYS for airway in airways_for_further_creates
         ]
         Weekday.objects.bulk_create(weekdays)
-        dates_for_flights = [datetime.date(year=2024, month=12, day=(22 + i)) for i in range(10)]
+        dates_for_flights = [datetime.date(year=2025, month=1, day=(i + 1)) for i in range(25)]
+        dates_for_flights.append(datetime.date(year=2024, month=12, day=31))
         flights = [
             Flight(airway=airway, date_departure=flight_date, status='PLD', price=(2000 + airway.flight_duration.total_seconds() // 60 * 24)) 
             for airway in airways_for_further_creates for flight_date in dates_for_flights
         ]
         for each in flights:
             each.save()
+        CustomUser.objects.create_superuser('timurs@gmail.com', 'teemur')
 

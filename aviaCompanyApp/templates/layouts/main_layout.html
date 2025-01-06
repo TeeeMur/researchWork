@@ -31,7 +31,10 @@
                         </li>
                     </ul>
                     {% if request.user.is_authenticated %}
-                        <a class="btn btn-outline-primary navbar-actions" href="{% url 'profile' %}">Профиль</a>
+                        <div class="d-inline-flex justify-content-center">
+                            <a class="btn btn-outline-primary navbar-actions me-2" href="{% url 'cart' %}">Корзина</a>
+                            <a class="btn btn-primary navbar-actions" href="{% url 'profile' %}">Профиль</a>
+                        </div>
                     {% else %}
                         <a class="btn btn-outline-primary navbar-actions" href="{% url 'login' %}">Войти</a>
                     {% endif %}

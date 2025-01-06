@@ -15,7 +15,7 @@ class BuyTicketsForm(forms.Form):
                                           widget=forms.Select(attrs={'class': 'form-select index-middle-forms'}), label='', empty_label='Куда')
     flight_date = forms.DateField(widget=forms.DateInput(attrs={'class': 'form-control index-middle-forms', 
                                                                 'type': 'date', 'value': datetime.date.today(),
-                                                                'min': datetime.date.today() + datetime.timedelta(days=1),
+                                                                'min': datetime.date.today(),
                                                                 'max': datetime.date.today() + datetime.timedelta(days=90)}), label='')
 
 class LoginForm(forms.Form):
@@ -58,6 +58,13 @@ class UpdateUserForm(forms.ModelForm):
     class Meta:
         model = models.CustomUser
         fields = ['first_name', 'surname', 'email', 'phone_num']
+
+    def clean(self):
+        data = super().clean()
+
+        if 'email' in self.changed_data and models.CustomUser.objects.filter(self.cleaned_data['email']).first() is not None:
+            raise ValidationError('Этот email уже занят!')
+        return data
 
 class DocForm(forms.ModelForm):
     added_check = forms.BooleanField(widget=forms.CheckboxInput(attrs={'class': 'form-check-input ms-2 mb-3'}), label='Сохранить', required=False)

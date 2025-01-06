@@ -5,6 +5,7 @@ from .models import *
 admin.site.register(CustomUser)
 admin.site.register(Airway)
 admin.site.register(Airport)
+admin.site.register(Cart)
 admin.site.register(Doc)
 admin.site.register(Pilot)
 admin.site.register(Service)

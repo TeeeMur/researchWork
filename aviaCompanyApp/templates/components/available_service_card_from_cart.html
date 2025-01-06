@@ -1,0 +1,21 @@
+{% load static %}
+<div class="container border rounded mt-1 mb-3 service-card">
+    <div class="w-100 d-inline-flex justify-content-between mt-2">
+        <h4 id="service-name-{{ each_service.id }}" class="ms-2">{{ each_service.name }}</h4>
+        <div class="align-content-center me-1 fs-5"><span id="service-price-{{ each_service.id }}">{{ each_service.price }}</span> ₽</div>
+    </div>
+    <div class="row m-0 mb-2">
+        <div class="col-9">
+            {{ each_service.description }}
+        </div>
+        <div class="col-3 mb-1 d-inline-flex justify-content-end">
+            <div class="align-content-end">
+                {% if each_service.in_ticket %}
+                    <button class="btn btn-outline-primary service-btn" id="{{ each_service.pk }}" name="services" value="{{ each_service.id }}">Сбросить</button>
+                {% else %}
+                    <button class="btn btn-primary service-btn" name="services" id="{{ each_service.pk }}" value="{{ each_service.id }}">Добавить</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>

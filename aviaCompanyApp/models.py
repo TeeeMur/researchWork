@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.core.validators import RegexValidator
 from django.core.exceptions import FieldError, ValidationError
 from itertools import product
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from django.template.defaultfilters import slugify
 
 phone_regex = RegexValidator(regex=r'^\+?\d{9,15}$', message='Некорректный номер телефона')
@@ -21,6 +21,17 @@ class CustomUserManager(BaseUserManager):
         Cart.objects.create(client=user)
         return user
     
+    def create_user(self, email, password, first_name, surname, phone_num):
+            if not email:
+                raise ValueError("The Email must be set")
+            email = self.normalize_email(email)
+            user = self.model(email=email, first_name=first_name, surname=surname, phone_num=phone_num)
+            user.set_password(password)
+            user.save()
+            Cart.objects.create(client=user)
+            return user
+    
+
     def create_superuser(self, email, password):
         if not email:
             raise ValueError("The Email must be set")
@@ -33,15 +44,32 @@ class CustomUserManager(BaseUserManager):
     
 class FlightManager(models.Manager):
     def get_flight_by_cities_and_date_ordtime(self, dep_city, dest_city, date):
-        return self.select_related('airway').annotate(tickets_count=(models.F('airway__plane__load_capacity') - models.Count('ticket'))).filter(airway__departure_airport__nearest_city=dep_city, 
+        time_dep_border = time(hour=0, minute=0)
+        if str(datetime.now().date()) == str(date) and datetime.now().hour >= 21:
+            time_dep_border = time(hour=23, minute=59)
+        elif str(datetime.now().date()) == str(date):
+            time_dep_border = datetime.now() + timedelta(hours=3)
+        return self.select_related('airway').annotate(tickets_count=(models.F('airway__plane__load_capacity') - models.Count('ticket', filter=models.Q(ticket__purchased=True)))).filter(airway__departure_airport__nearest_city=dep_city, 
                                                                airway__destination_airport__nearest_city=dest_city, 
-                                                               date_departure=date, tickets_count__gt=0, status='PLD').order_by('time_arrival')
+                                                               date_departure=date, tickets_count__gt=0, 
+                                                               time_departure__gt=time_dep_border, status='PLD').order_by('time_arrival')
     
 class ServicesManager(models.Manager):
     def get_services_for_flight(self, flight):
         return self.filter(airway=flight.airway).all()
     def get_services_for_flight_by_ticket(self, ticket):
-        return self.filter(airway=ticket.flight.airway).all()
+        ticket_services = ticket.services.all()
+        return self.filter(airway=ticket.flight.airway).all().annotate(in_ticket=models.Case(models.When(id__in=ticket_services, then=True), default=False, output_field=models.BooleanField()))
+    
+class TicketManager(models.Manager):
+    def get_tickets_in_cart(self, client):
+        return self.filter(cart__client=client).order_by('flight','-created_at').all()
+    def count_last_tickets_cart(self, client):
+        return self.filter(cart__client=client) \
+            .annotate(tickets_count=(models.F('flight__airway__plane__load_capacity') - models.Count('purchased', filter=models.Q(purchased=True)))) \
+            .values('flight', 'tickets_count')
+    def get_profile_purchased_tickets(self, client):
+        return self.filter(client=client, purchased=True).all().order_by('-flight__date_departure', '-flight__time_departure').all()
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     MAX_DOCS = 2
@@ -248,28 +276,29 @@ class Cart(models.Model):
 class Ticket(models.Model):
     ticket_slug = models.SlugField(unique=True, db_index=True)
     client = models.ForeignKey(to=CustomUser, on_delete=models.DO_NOTHING)
-    cart = models.ForeignKey(to=Cart, on_delete=models.PROTECT, null=True)
+    cart = models.ForeignKey(to=Cart, on_delete=models.PROTECT, null=True, blank=True)
     flight = models.ForeignKey(to=Flight, on_delete=models.PROTECT)
     services = models.ManyToManyField(Service)
     price = models.IntegerField()
     document = models.ForeignKey(to=Doc, on_delete=models.PROTECT)
     purchased = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f'{self.ticket_slug}'
     
     def save(self, *args, **kwargs):
+        flight_tickets = Ticket.objects.filter(client=self.client, flight=self.flight)
         if not self.ticket_slug:
-            self.ticket_slug = slugify(str(self.flight) + str(self.client.email.split('@')[0]) + str(self.document.custom_name.replace(" ", "_")))
+            self.ticket_slug = slugify(str(self.flight) + str(self.client.email.split('@')[0]) + str(flight_tickets.count()))
         return super(Ticket, self).save(*args, **kwargs)
     
-    class Meta:
-        unique_together = [['flight', 'document'], ['flight', 'document', 'cart']]
+    objects = TicketManager()
     
 class FlightSeat(models.Model):
     flight = models.ForeignKey(to=Flight, on_delete=models.CASCADE)
     seat_num = models.CharField(validators=[RegexValidator(r'^\d\d?[A-F]$')])
-    ticket_num=models.OneToOneField(to=Ticket, on_delete=models.SET_NULL, null=True)
+    ticket_num=models.OneToOneField(to=Ticket, on_delete=models.SET_NULL, null=True, blank=True)
 
     def clean(self):
         if self.ticket_num != None and self.ticket_num.flight != self.flight:

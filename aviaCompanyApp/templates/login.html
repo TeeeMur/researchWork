@@ -13,7 +13,21 @@
                             {{ field }}
                         {% endfor %}
                         <label class="form-check-label" for="login_not_a_robot">Я не робот</label>
-                        {{ loginForm.non_field_errors }}
+                        {% for each_error in loginForm.non_field_errors %}
+                            <div class="alert alert-warning mt-1 me-1 ms-1" role="alert">
+                                {{ each_error }}
+                            </div>
+                        {% endfor %}
+                        {% for each_error in loginForm.username.errors %}
+                            <div class="alert alert-warning mt-1 me-1 ms-1" role="alert">
+                                {{ each_error }}
+                            </div>
+                        {% endfor %}
+                        {% for each_error in loginForm.password.errors %}
+                            <div class="alert alert-warning mt-1 me-1 ms-1" role="alert">
+                                {{ each_error }}
+                            </div>
+                        {% endfor %}
                         <button class="btn btn-outline-primary w-100 mb-2" type="submit">Войти</button>
                     </form>
                     <div class="m-2 mb-4">
