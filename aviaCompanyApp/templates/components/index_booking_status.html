@@ -1,7 +1,7 @@
 {% load static %}
 
 <div class="container">
-    <form class="row input-group mt-5 mb-1 mx-3 w-auto" method="GET" action="{% url 'my_ticket' %}">
+    <form class="row input-group mt-5 mb-1 mx-3 w-auto" method="GET" action="{% url 'search_ticket' %}">
         {% for field in bookingForm %}
             {{ field }}
         {% endfor %}

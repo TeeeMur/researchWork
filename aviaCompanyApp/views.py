@@ -127,30 +127,16 @@ def user_docs(request):
     return render(request, 'profile_docs.html', {'docsForms': docsForms})
 
 
-def my_ticket(request):
-    curr_ticket_slug = request.GET.get('curr_ticket_slug')
+def my_ticket(request, curr_ticket_slug):
     curr_ticket = Ticket.objects.get(ticket_slug=curr_ticket_slug)
-    services_for_flight = Service.objects.get_services_for_ticket(curr_ticket)
-    if not curr_ticket.flightseat and curr_ticket.flight.status == 'EXP':
-        can_choose_seat = Service.objects.get(name='Выбор места') in set(services_for_flight).intersection(set(curr_ticket.services.all()))
-        if can_choose_seat:
-            if request.method == 'POST':
-                chooseSeatForm = ChooseSeatForm(request.POST)
-                if chooseSeatForm.is_valid():
-                    flightseat = chooseSeatForm.seat_number
-                    curr_ticket.flightseat = flightseat
-                    curr_ticket.save()
-        else:
-            if request.method == 'POST':
-                request_params = request.POST
-    return render(request, 'bought_ticket_view.html', {'curr_ticket': curr_ticket, 'services_for_flight': services_for_flight, 
-                                                   'choose_seat_form': chooseSeatForm})
+    services_for_flight = Service.objects.get_services_for_flight_by_ticket(curr_ticket)
+    return render(request, 'bought_ticket_view.html', {'curr_ticket': curr_ticket, 'services_for_flight': services_for_flight})
 
 def current_bought_ticket(request):
     ticket_surname = request.GET.get('surname')
     ticket_slug = request.GET.get('ticket_num')
-    ticket = Ticket.objects.get(slugField=ticket_slug, client__surname=ticket_surname)
-    return redirect(reverse('my_ticket', curr_ticket=ticket))
+    ticket = Ticket.objects.get(ticket_slug=ticket_slug, document__surname=ticket_surname)
+    return redirect(reverse('my_ticket', kwargs={'curr_ticket_slug':ticket.ticket_slug}))
 
 @login_required
 def profile_tickets(request):
@@ -201,7 +187,7 @@ def cart(request):
                 tickets_count_map[flight] += 1
             else:
                 tickets_count_map[flight] = 1
-            docs_count = Doc.objects.filter(models.Q(ticket__client=request.user)).count()
+            docs_count = Doc.objects.filter(models.Q(ticket__flight=flight) & models.Q(ticket__client=request.user)).count()
             docs_counter = docs_count > 1 or docs_counter
         for each_flight in list(tickets_count_map.keys()):
             flight_last_tickets = last_tickets.filter(flight=each_flight).count()

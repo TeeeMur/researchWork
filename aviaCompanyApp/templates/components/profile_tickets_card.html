@@ -66,7 +66,7 @@
         </div>
         <div class="col-2 align-content-end ps-0">
             <a class="w-100 btn button-ticket-plus-color fw-bold fs-5 h-100 align-content-center"
-                href="{% url 'my_ticket' %}?curr_ticket_slug={{ each_ticket.ticket_slug }}">Перейти к билету</a>
+                href="{% url 'my_ticket' curr_ticket_slug=each_ticket.ticket_slug %}">Перейти к билету</a>
         </div>
     </div>
 </div>
