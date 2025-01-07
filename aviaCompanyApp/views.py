@@ -123,7 +123,7 @@ def user_docs(request):
                     if url_next:
                         return redirect(url_next)
                     messages.add_message(request=request, level=messages.INFO, message=f'Документ {inputDocForm.cleaned_data['custom_name']} был успешно изменен')
-                    docsForms[doc_num] = DocForm(instance=inputDoc)
+                    docsForms[doc_num] = DocForm(instance=inputDoc, initial={'added_check': True})
     return render(request, 'profile_docs.html', {'docsForms': docsForms})
 
 
@@ -156,10 +156,6 @@ def curr_ticket_preview(request, flight_slug, add_lug):
             return render(request, 'ticket_config.html', {'curr_flight': curr_flight, 'add_lug': add_lug, 'available_services': available_services, 
                                                     'client_docs': client_docs})
         curr_doc = Doc.objects.filter(owner=request.user, custom_name=params['client_doc']).first()
-        # if Ticket.objects.filter(client=request.user, flight=curr_flight, document=curr_doc).first():
-        #     messages.warning(request, "На этот рейс уже есть билет с документом " + curr_doc.custom_name + "!")
-        #     return render(request, 'ticket_config.html', {'curr_flight': curr_flight, 'add_lug': add_lug, 'available_services': available_services, 
-        #                                             'client_docs': client_docs})
         new_ticket = Ticket(client=request.user, cart=Cart.objects.get(client=request.user), flight=curr_flight, price=curr_flight.price, document=curr_doc)
         new_ticket.save()
         for each_service_name in params.getlist('services'):
@@ -187,7 +183,7 @@ def cart(request):
                 tickets_count_map[flight] += 1
             else:
                 tickets_count_map[flight] = 1
-            docs_count = Doc.objects.filter(models.Q(ticket__flight=flight) & models.Q(ticket__client=request.user)).count()
+            docs_count = Doc.objects.filter(models.Q(ticket__flight=flight) & models.Q(id=each_ticket.document.id)).count()
             docs_counter = docs_count > 1 or docs_counter
         for each_flight in list(tickets_count_map.keys()):
             flight_last_tickets = last_tickets.filter(flight=each_flight).count()

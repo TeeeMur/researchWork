@@ -69,7 +69,7 @@ class TicketManager(models.Manager):
             .annotate(tickets_count=(models.F('flight__airway__plane__load_capacity') - models.Count('purchased', filter=models.Q(purchased=True)))) \
             .values('flight', 'tickets_count')
     def get_profile_purchased_tickets(self, client):
-        return self.filter(client=client, purchased=True).all().order_by('-flight__date_departure', '-flight__time_departure').all()
+        return self.filter(client=client, cart=None, purchased=True).all().order_by('-flight__date_departure', '-flight__time_departure').all()
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     MAX_DOCS = 2
@@ -220,10 +220,11 @@ class Weekday(models.Model):
 
 class Flight(models.Model):
     STATUS_CHOICES = (
-        ('PLD', 'Запланирован'),
-        ('EXP','Ожидается'),
-        ('PRP', 'В подготовке'),
-        ('IFL','В полете'),
+        ('PLD', 'Ожидается регистрация'),
+        ('EXP','Идет регистрация'),
+        ('PRP', 'Посадка'),
+        ('PRE', 'Посадка окончена'),
+        ('IFL','В процессе'),
         ('CTD','Выполнен'),
         ('CLD','Отменен'),
         ('DLD','Задерживается'),
@@ -235,6 +236,8 @@ class Flight(models.Model):
     date_arrival = models.DateField(blank=True, null=True)
     time_arrival = models.TimeField(blank=True, null=True)
     status = models.CharField(choices=STATUS_CHOICES)
+    gate = models.IntegerField(blank=True, null=True)
+    exit_terminal = models.CharField(blank=True, null=True)
     price = models.IntegerField()
 
     objects = FlightManager()
@@ -288,8 +291,8 @@ class Ticket(models.Model):
         return f'{self.ticket_slug}'
     
     def save(self, *args, **kwargs):
-        flight_tickets = Ticket.objects.filter(client=self.client, flight=self.flight)
         if not self.ticket_slug:
+            flight_tickets = Ticket.objects.filter(client=self.client, flight=self.flight)
             self.ticket_slug = slugify(str(self.flight) + str(self.client.email.split('@')[0]) + str(flight_tickets.count()))
         return super(Ticket, self).save(*args, **kwargs)
     

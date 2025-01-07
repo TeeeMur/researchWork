@@ -8,34 +8,40 @@
         <div class="row justify-content-center pt-5">
             <div class="col-lg-10 col-12 bg-light rounded">
                 <h2 class="m-4">№ билета: {{ curr_ticket.ticket_slug }}</h2>
-                <div class="container border rounded mt-2 mb-2 ms-1 me-1 p-1">
+                <div class="container border rounded mt-2 mb-2 p-1">
                     <div class="row m-0">
                         <div class="col-9">
                             <div class="w-100 d-inline-flex justify-content-between">
                                 <h4 class="ms-1 mt-2 mb-0">Bauman Airlines</h4>
-                                <div class="me-2 mt-2 fw-normal fs-5">Рейс: {{ curr_ticket.flight.airway.number }}</div>
+                                {% if curr_ticket.flight.status == 'EXP' %}
+                                    {% if curr_ticket.flightseat %}
+                                    <div class="fs-4 text-success text-center">Место в салоне: {{ curr_ticket.flightseat.seat_num }}</div>
+                                    {% else %}
+                                    <div class="fs-5 text-warning text-center">Регистрация открыта</div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="fs-5 align-content-end">{{ curr_ticket.flight.get_status_display }}</div>
+                                {% endif %}
+                                <div class="me-1 mt-2 fw-bolder fs-5">Рейс: {{ curr_ticket.flight.airway.number }}</div>
                             </div>
                             <div class="ps-1 w-100 d-inline-flex justify-content-between mb-1">
                                 <div class="d-inline-flex">
                                     <div class="ms-1">
                                         <div class="align-content-center">
                                             <div class="fw-bold fs-1">{{ curr_ticket.flight.time_departure|time:"H:i" }}</div>
-                                            <div class="text-center fw-bolder">{{ curr_ticket.flight.date_departure|date:"d M" }}
+                                            <div class="fs-5 text-center fw-bolder">{{ curr_ticket.flight.date_departure|date:"d M" }}
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="pb-4 pt-1 ms-2 align-content-center text-center fw-bolder">
-                                        {{ curr_ticket.flight.airway.departure_airport.international_code }}</div>
                                 </div>
                                 <div class="align-content-center">
-                                    <div class="h-50 text-center">В пути: {{ curr_ticket.flight.airway.flight_duration_hhmm }}</div>
+                                    <div class="fs-5 h-50 text-center">В пути: {{ curr_ticket.flight.airway.flight_duration_hhmm }}</div>
                                 </div>
                                 <div class="d-inline-flex">
-                                    <div class="pb-4 pt-1 me-2 align-content-center text-center fw-bolder">{{ curr_ticket.flight.airway.destination_airport.international_code }}</div>
                                     <div class="me-1">
                                         <div class="align-content-center">
                                             <div class="fw-bold fs-1">{{ curr_ticket.flight.time_arrival|time:"H:i" }}</div>
-                                            <div class="text-center fw-bolder">{{ curr_ticket.flight.date_arrival|date:"d M" }}
+                                            <div class="fs-5 text-center fw-bolder">{{ curr_ticket.flight.date_arrival|date:"d M" }}
                                             </div>
                                         </div>
                                     </div>
@@ -43,23 +49,49 @@
                             </div>
                         </div>
                         <div class="col-3 btn-like-color-primary rounded">
-                            <div class="fs-2 fw-bold text-center h-100 align-content-center text-light">{{ curr_ticket.price }} ₽</div>
+                            <div class="fw-bold text-center h-100 align-content-center">
+                                <div class='text-light'>Время посадки:</div>
+                                <div></div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            <div class="container border rounded mt-2 mb-2 ms-1 me-1 p-1">
+            <div class="container mt-2 mb-2 p-0">
                 <div class="row m-0">
-                    <div class="col-8">
-                        {% if not curr_ticket.flightseat and curr_ticket.flight.status == 'EXP' %}
-                            <h4>Регистрация открыта</h4>
-                        {% elif curr_ticket.flightseat.seat_num %}
-                        <div class="w-100 rounded d-inline-flex">
-                            <div>Ваше место в самолете:</div>
-                            <div>{{ curr_ticket.flightseat.seat_num }}</div>
+                    <div class="col-8 p-1 border rounded">
+                        <div class="ms-1">
+                            <div class="fs-4">Фамилия и имя пассажира:</div>
+                            <div class="fs-3 fw-bolder">{{ curr_ticket.document.surname }} {{ curr_ticket.document.first_name }}</div>
                         </div>
-                        {% endif %}
+                        <div class="row ms-1">
+                            <div class="col p-0">
+                                <div class="fs-4">От:</div>
+                                <div class="fs-4 fw-bolder">
+                                    {{ curr_ticket.flight.airway.departure_airport.nearest_city }} / {{ curr_ticket.flight.airway.departure_airport.international_code }}
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="fs-4">До:</div>
+                                <div class="fs-4 fw-bolder">
+                                    {{ curr_ticket.flight.airway.destination_airport.nearest_city }} / {{ curr_ticket.flight.airway.destination_airport.international_code }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row ms-1">
+                            <div class="col p-0 fs-4">Терминал: <span class="fw-bolder">{{ curr_ticket.flight.exit_terminal }}</span></div>
+                            <div class="col p-0 fs-4">Выход: 
+                                <span class="fw-bolder">
+                                    {% if curr_ticket.flight.gate %}
+                                        {{ curr_ticket.flight.gate }}
+                                    {% else %}
+                                        Ожидается
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-4">
+                    <div class="col-4 ps-1 pe-0">
+                        <div class="border rounded h-100"></div>
                     </div>
                 </div>
             </div>

@@ -90,7 +90,7 @@
                                     <div class="fs-4">Итого:</div>
                                     <div class="fs-5 services-sum" id="services_sum">{{ curr_ticket.price }}</div>
                                 </div>
-                                <button class="w-100 btn button-ticket-plus-color mb-1" href="{% url "cart" %}">Вернуться в корзину</button>
+                                <a class="w-100 btn button-ticket-plus-color mb-1" href="{% url "cart" %}">Вернуться в корзину</a>
                                 <a class="w-100 btn btn-danger" href="{% url "ticket_remove" ticket_slug=curr_ticket.ticket_slug %}">Удалить из корзины</a>
                             </div>
                             {% for message in messages %}

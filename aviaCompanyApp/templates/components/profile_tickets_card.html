@@ -40,18 +40,23 @@
                         <div class="w-100 fs-4 text-danger text-center">Рейс завершен</div>
                     {% endif %}
                     <div class="w-100 d-inline-flex justify-content-between mb-1">
-                        <div class="">
+                        <div class="align-content-between">
                             <div class="align-content-center">
-                                <div class="fw-bold fs-2">{{ each_ticket.flight.time_departure|time:"H:i" }}</div>
+                                <div class="fw-bold fs-2 text-center">{{ each_ticket.flight.time_departure|time:"H:i" }}</div>
                             </div>
                             <div class="align-content-center text-center fw-bolder">{{ each_ticket.flight.airway.departure_airport.international_code }}</div>
+                            <div class="align-content-center text-center">{{ each_ticket.flight.airway.departure_airport.nearest_city }}</div>
                         </div>
-                        <div class="align-content-center pt-1">В пути: {{ each_ticket.flight.airway.flight_duration_hhmm }}</div>
-                        <div class="">
+                        <div class="align-content-center pt-1">
+                            <div class="text-center">В пути: {{ each_ticket.flight.airway.flight_duration_hhmm }}</div>
+                            <div class="text-center">Пассажир: <br/><span class="fw-bolder">{{ each_ticket.document.surname }} {{ each_ticket.document.first_name }}</span></div>
+                        </div>
+                        <div class="align-content-between">
                             <div class="align-content-center">
-                                <div class="fw-bold fs-2">{{ each_ticket.flight.time_arrival|time:"H:i" }}</div>
+                                <div class="fw-bold fs-2 text-center">{{ each_ticket.flight.time_arrival|time:"H:i" }}</div>
                             </div>
                             <div class="align-content-center text-center fw-bolder">{{ each_ticket.flight.airway.destination_airport.international_code }}</div>
+                            <div class="align-content-center text-center">{{ each_ticket.flight.airway.destination_airport.nearest_city }}</div>
                         </div>
                     </div>
                 </div>
