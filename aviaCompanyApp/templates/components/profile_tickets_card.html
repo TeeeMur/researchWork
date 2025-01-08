@@ -22,7 +22,7 @@
                         {% if each_ticket.flightseat %}
                         <div class="w-100 fs-4 text-success text-center">Место в салоне: {{ each_ticket.flightseat.seat_num }}</div>
                         {% else %}
-                        <div class="w-100 fs-5 text-warning text-center">Регистрация открыта, выберите место и услуги</div>
+                        <div class="w-100 fs-5 text-warning text-center">Регистрация открыта</div>
                         {% endif %}
                     {% elif each_ticket.flight.status == 'PLD' %}
                         <div class="w-100 fs-4 text-center">Регистрация ожидается</div>
