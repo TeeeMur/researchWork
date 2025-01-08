@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand, CommandParser
 from aviaCompanyApp.models import *
 from faker import Faker
 import random, datetime
+
 class Command(BaseCommand):
     def handle(self, *args, **options):
         faker = Faker('ru_RU')

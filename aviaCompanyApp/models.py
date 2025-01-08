@@ -5,6 +5,7 @@ from django.core.exceptions import FieldError, ValidationError
 from itertools import product
 from datetime import datetime, timedelta, time
 from django.template.defaultfilters import slugify
+from django.utils import timezone
 
 phone_regex = RegexValidator(regex=r'^\+?\d{9,15}$', message='Некорректный номер телефона')
 airport_code_validator = RegexValidator(regex=r'^[A-Z][A-Z][A-Z][A-Z]?$')
@@ -70,6 +71,10 @@ class TicketManager(models.Manager):
             .values('flight', 'tickets_count')
     def get_profile_purchased_tickets(self, client):
         return self.filter(client=client, cart=None, purchased=True).all().order_by('-flight__date_departure', '-flight__time_departure').all()
+
+class FlightSeatManager(models.Manager):
+    def get_available_seats(self, curr_flight):
+        return self.filter(flight=curr_flight, ticket_num=None).all()
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     MAX_DOCS = 2
@@ -229,6 +234,10 @@ class Flight(models.Model):
         ('CLD','Отменен'),
         ('DLD','Задерживается'),
     )
+    
+    default_boarding_timedelta_start = timedelta(minutes=40)
+    default_register_timedelta_start = timedelta(minutes=120)
+
     slugField = models.SlugField(unique=True, db_index=True)
     airway = models.ForeignKey(to=Airway, on_delete=models.PROTECT)
     date_departure = models.DateField()
@@ -238,6 +247,8 @@ class Flight(models.Model):
     status = models.CharField(choices=STATUS_CHOICES)
     gate = models.IntegerField(blank=True, null=True)
     exit_terminal = models.CharField(blank=True, null=True)
+    register_dtime = models.DateTimeField(null=True, blank=True)
+    boarding_dtime = models.DateTimeField(null=True, blank=True)
     price = models.IntegerField()
 
     objects = FlightManager()
@@ -257,6 +268,10 @@ class Flight(models.Model):
             raise ValidationError('Дата и день недели не совпадают')
         if self.time_departure is None:
             self.time_departure = self.airway.departure_time
+        if self.boarding_dtime is None: 
+            self.boarding_dtime = datetime.combine(self.date_departure, self.time_departure, tzinfo=timezone.get_current_timezone()) - Flight.default_boarding_timedelta_start
+        if self.register_dtime is None: 
+            self.register_dtime = datetime.combine(self.date_departure, self.time_departure, tzinfo=timezone.get_current_timezone()) - Flight.default_register_timedelta_start
         if not self.slugField:
             self.slugField = slugify((self.airway.number + str(self.date_departure)))
         if self.date_arrival is None and self.time_arrival is None:
@@ -266,7 +281,7 @@ class Flight(models.Model):
         super(Flight, self).save(*args, **kwargs)
         if FlightSeat.objects.filter(flight=self).first() is None:
             seats_count = self.airway.plane.load_capacity
-            seats = list(map(lambda x: FlightSeat(seat_num="".join(x), flight=self), product([str(i) for i in range(seats_count//6 + 1)], 'ABCDEF')))[0:seats_count]
+            seats = list(map(lambda x: FlightSeat(seat_num="".join(x), flight=self), product([str(i) for i in range(1, seats_count//6 + 2)], 'ABCDEF')))[0:seats_count]
             FlightSeat.objects.bulk_create(seats)
         return self
 
@@ -302,6 +317,11 @@ class FlightSeat(models.Model):
     flight = models.ForeignKey(to=Flight, on_delete=models.CASCADE)
     seat_num = models.CharField(validators=[RegexValidator(r'^\d\d?[A-F]$')])
     ticket_num=models.OneToOneField(to=Ticket, on_delete=models.SET_NULL, null=True, blank=True)
+
+    objects = FlightSeatManager()
+
+    class Meta:
+        unique_together = ['seat_num', 'flight', 'ticket_num']
 
     def clean(self):
         if self.ticket_num != None and self.ticket_num.flight != self.flight:

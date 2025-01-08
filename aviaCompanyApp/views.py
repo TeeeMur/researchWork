@@ -7,8 +7,8 @@ from django.contrib import auth, messages
 from django.core.exceptions import NON_FIELD_ERRORS
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
+import random
 # Create your views here.
-
 
 def index(request):
     bookingForm = BookingStatusForm()
@@ -130,7 +130,20 @@ def user_docs(request):
 def my_ticket(request, curr_ticket_slug):
     curr_ticket = Ticket.objects.get(ticket_slug=curr_ticket_slug)
     services_for_flight = Service.objects.get_services_for_flight_by_ticket(curr_ticket)
-    return render(request, 'bought_ticket_view.html', {'curr_ticket': curr_ticket, 'services_for_flight': services_for_flight})
+    can_choose_seat = Service.objects.get(name="Выбор места") in services_for_flight.filter(in_ticket=True)
+    chooseSeatForm = ChooseSeatForm(flight=curr_ticket.flight)
+    if request.method == 'POST':
+        available_seats = FlightSeat.objects.get_available_seats(curr_flight=curr_ticket.flight)
+        if request.POST.get('seat_number'):
+            chosen_seat = available_seats.get(seat_num=request.POST.get('seat_number'))
+            chosen_seat.ticket_num = curr_ticket
+            chosen_seat.save()
+        else:
+            chosen_seat = random.choice(available_seats)
+            chosen_seat.save()
+    return render(request, 'bought_ticket_view.html', {'curr_ticket': curr_ticket, 'services_for_flight': services_for_flight, 
+                                                       'can_choose_seat': can_choose_seat,
+                                                       'choose_seat_form': chooseSeatForm})
 
 def current_bought_ticket(request):
     ticket_surname = request.GET.get('surname')
@@ -227,6 +240,16 @@ def edit_service_in_cart(request, ticket_slug, service_id):
         curr_ticket.save()
         response = 'ADDED'
     return JsonResponse({'response': response, 'ticket_price': curr_ticket.price, 'service_name': curr_service.name, 'service_price': curr_service.price})
+
+@require_POST
+def edit_service_bought(request, ticket_slug, service_id):
+    curr_ticket = Ticket.objects.get(ticket_slug=ticket_slug)
+    curr_service = Service.objects.get(pk=service_id)
+    curr_ticket.services.add(curr_service)
+    curr_ticket.price += curr_service.price
+    curr_ticket.save()
+    return JsonResponse({'service_name': curr_service.name, 'service_price': curr_service.price})
+
 
 
 def remove_ticket(request, ticket_slug):

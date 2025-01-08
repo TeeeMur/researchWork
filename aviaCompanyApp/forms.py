@@ -81,9 +81,10 @@ class DocForm(forms.ModelForm):
         fields = ['added_check', 'custom_name', 'surname', 'first_name', 'type', 'date_of_issue', 'number']
 
 class ChooseSeatForm(forms.Form):
-    seat_number = forms.ModelChoiceField(queryset=models.FlightSeat.objects.none())
+    seat_number = forms.ModelChoiceField(queryset=models.FlightSeat.objects.none(), empty_label='Выбрать', 
+                                         widget=forms.Select(attrs={'class': 'form-select'}))
 
     def __init__(self, flight, *args, **kwargs):
         super(ChooseSeatForm, self).__init__(*args, **kwargs)
-        self.fields['seat_number'].queryset = models.FlightSeat.objects.filter(flight=flight).all()
+        self.fields['seat_number'].queryset = models.FlightSeat.objects.filter(flight=flight, ticket_num=None).values_list('seat_num', flat=True)
 

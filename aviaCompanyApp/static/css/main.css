@@ -140,3 +140,8 @@
 .register-warning-bold {
     font-weight: bold;
 }
+
+.plane-seat {
+    width: 36px;
+    height: 36px;
+}

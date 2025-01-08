@@ -1,0 +1,17 @@
+{% load static %}
+<div class="container border rounded mt-1 mb-2 service-card ps-2 pe-2" id="{{ each_service.id }}-card">
+    <div class="w-100 d-inline-flex justify-content-between mt-1">
+        <div class="ms-1 fs-5 service-name">{{ each_service.name }}</div>
+        <div class="me-1 fs-5"><span class="service-price">{{ each_service.price }}</span> ₽</div>
+    </div>
+    <div class="row m-0 mb-2">
+        <div class="col-8 ps-1 pe-1">
+            {{ each_service.description }}
+        </div>
+        <div class="col-4 mb-1 ps-3 d-inline-flex justify-content-center align-items-center">
+            <div class="align-content-end">
+                <button class="btn btn-primary service-btn" name="services" id="{{ each_service.pk }}" value="{{ each_service.id }}">Добавить</button>
+            </div>
+        </div>
+    </div>
+</div>

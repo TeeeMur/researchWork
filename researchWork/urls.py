@@ -15,6 +15,7 @@ urlpatterns = [
     path('ticket_view/<slug:flight_slug>/<int:add_lug>/', views.curr_ticket_preview, name='ticket_view'),
     path('ticket_view_from_cart/<slug:ticket_slug>/', views.ticket_config_from_cart, name='ticket_config_cart'),
     path('my_ticket/<slug:curr_ticket_slug>/', views.my_ticket, name='my_ticket'),
+    path('my_ticket/<slug:ticket_slug>/async_edit_service_bought/<int:service_id>/', views.edit_service_bought, name='edit_service_bought'),
     path('personal_tickets/', views.profile_tickets, name='profile.tickets'),
     path('search_ticket/', views.current_bought_ticket, name='search_ticket'),
     path('cart/', views.cart, name='cart'),
