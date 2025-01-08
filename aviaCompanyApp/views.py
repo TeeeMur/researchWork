@@ -48,6 +48,15 @@ def logout(request):
     auth.logout(request)
     return redirect(reverse('index'))
 
+@login_required
+@require_POST
+def delete_profile(request):
+    user_to_delete = CustomUser.objects.get(email=request.user.email)
+    auth.logout(request)
+    user_to_delete.delete()
+    return redirect(reverse('index'))
+
+
 def register(request):
     registerForm = RegisterForm() 
     if request.method == "POST":
@@ -225,6 +234,7 @@ def ticket_config_from_cart(request, ticket_slug):
                                                     'client_docs': client_docs})
 
 @require_POST
+@login_required
 def edit_service_in_cart(request, ticket_slug, service_id):
     curr_ticket = Ticket.objects.get(ticket_slug=ticket_slug)
     curr_service = Service.objects.get(pk=service_id)

@@ -20,5 +20,6 @@ urlpatterns = [
     path('search_ticket/', views.current_bought_ticket, name='search_ticket'),
     path('cart/', views.cart, name='cart'),
     path('ticket_view_from_cart/<slug:ticket_slug>/async_edit_service_cart/<int:service_id>/', views.edit_service_in_cart, name='edit_service_in_cart'),
-    path('ticket_remove/<slug:ticket_slug>/', views.remove_ticket, name='ticket_remove')
+    path('ticket_remove/<slug:ticket_slug>/', views.remove_ticket, name='ticket_remove'),
+    path('delete_profile/', views.delete_profile, name='delete_profile'),
 ]

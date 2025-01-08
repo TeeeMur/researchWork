@@ -22,7 +22,7 @@ class CustomUserManager(BaseUserManager):
         Cart.objects.create(client=user)
         return user
     
-    def create_user(self, email, password, first_name, surname, phone_num):
+    def create_full_user(self, email, password, first_name, surname, phone_num):
             if not email:
                 raise ValueError("The Email must be set")
             email = self.normalize_email(email)
@@ -49,7 +49,7 @@ class FlightManager(models.Manager):
         if str(datetime.now().date()) == str(date) and datetime.now().hour >= 21:
             time_dep_border = time(hour=23, minute=59)
         elif str(datetime.now().date()) == str(date):
-            time_dep_border = datetime.now() + timedelta(hours=3)
+            time_dep_border = datetime.now() + timedelta(hours=1)
         return self.select_related('airway').annotate(tickets_count=(models.F('airway__plane__load_capacity') - models.Count('ticket', filter=models.Q(ticket__purchased=True)))).filter(airway__departure_airport__nearest_city=dep_city, 
                                                                airway__destination_airport__nearest_city=dest_city, 
                                                                date_departure=date, tickets_count__gt=0, 
@@ -102,7 +102,7 @@ class Doc(models.Model):
     surname = models.CharField(max_length=43)
     number = models.CharField(validators=[RegexValidator(regex=r'^\d{10}$')])
     date_of_issue = models.DateField()
-    owner = models.ForeignKey(to=CustomUser, on_delete=models.CASCADE)
+    owner = models.ForeignKey(to=CustomUser, on_delete=models.DO_NOTHING)
 
     class Meta:
         unique_together = [['number', 'type', 'date_of_issue', 'custom_name'], ['custom_name', 'owner']]

@@ -29,8 +29,12 @@
                 </form>
                 <div class="me-2 ms-2 mb-3">
                     <a class="btn btn-success w-100 mb-1" href="{% url 'profile.docs' %}">Мои документы</a>
-                    <a class="btn button-ticket-plus-color w-100 mb-4" href="{% url 'profile.tickets' %}">Мои билеты</a>
+                    <a class="btn button-ticket-plus-color w-100 mb-1" href="{% url 'profile.tickets' %}">Мои билеты</a>
                     <a class="btn btn-outline-danger w-100" href="{% url 'logout' %}">Выйти</a>
+                    <form method="POST" action="{% url 'delete_profile' %}">
+                        {% csrf_token %}
+                        <button class="btn btn-outline-danger w-100 mt-4">Удалить профиль</button>
+                    </form>
                 </div>
             </div>
         </div>
