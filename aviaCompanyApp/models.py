@@ -102,7 +102,7 @@ class Doc(models.Model):
     surname = models.CharField(max_length=43)
     number = models.CharField(validators=[RegexValidator(regex=r'^\d{10}$')])
     date_of_issue = models.DateField()
-    owner = models.ForeignKey(to=CustomUser, on_delete=models.DO_NOTHING)
+    owner = models.ForeignKey(to=CustomUser, on_delete=models.SET_NULL, null=True)
 
     class Meta:
         unique_together = [['number', 'type', 'date_of_issue', 'custom_name'], ['custom_name', 'owner']]
@@ -293,8 +293,8 @@ class Cart(models.Model):
 
 class Ticket(models.Model):
     ticket_slug = models.SlugField(unique=True, db_index=True)
-    client = models.ForeignKey(to=CustomUser, on_delete=models.DO_NOTHING)
-    cart = models.ForeignKey(to=Cart, on_delete=models.PROTECT, null=True, blank=True)
+    client = models.ForeignKey(to=CustomUser, on_delete=models.SET_NULL, null=True)
+    cart = models.ForeignKey(to=Cart, on_delete=models.CASCADE, null=True, blank=True)
     flight = models.ForeignKey(to=Flight, on_delete=models.PROTECT)
     services = models.ManyToManyField(Service)
     price = models.IntegerField()
