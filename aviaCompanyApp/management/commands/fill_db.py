@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand, CommandParser
 from aviaCompanyApp.models import *
 from faker import Faker
+from calendar import monthrange
 import random, datetime
 
 class Command(BaseCommand):
@@ -139,8 +140,12 @@ class Command(BaseCommand):
             Weekday(day=weekday, airway=airway) for weekday in Weekday.WEEK_DAYS for airway in airways_for_further_creates
         ]
         Weekday.objects.bulk_create(weekdays)
-        dates_for_flights = [datetime.date(year=2025, month=1, day=(i + 1)) for i in range(25)]
-        dates_for_flights.append(datetime.date(year=2024, month=12, day=31))
+        today_year = datetime.datetime.today().year
+        today_month = datetime.datetime.today().month
+        today_day = datetime.datetime.today().day
+        today_max_month_days = monthrange(today_year, today_month)[1]
+        dates_for_flights = [datetime.date(year=today_year, 
+                                           month=(today_month + i // today_max_month_days), day=(i % today_max_month_days)) for i in range(1, 26)]
         flights = [
             Flight(airway=airway, date_departure=flight_date, exit_terminal='B', status='PLD', price=(2000 + airway.flight_duration.total_seconds() // 60 * 24)) 
             for airway in airways_for_further_creates for flight_date in dates_for_flights
